@@ -17,21 +17,79 @@ with zero external dependencies.
 """
 from __future__ import annotations
 
+import asyncio
 import random
+import time
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import httpx
 import structlog
-from tenacity import AsyncRetrying, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 from ..config import get_settings
 
 log = structlog.get_logger(__name__)
 
 
+class _RateLimiter:
+    """Process-wide rate limiter.
+
+    SoSoValue's documented limit is 20 req/min per key (3s spacing).
+    We stay safely under it at 3.2s to leave headroom for burst overlap
+    between sequential awaits.
+    """
+
+    def __init__(self, min_interval_s: float = 3.2) -> None:
+        self.min_interval = min_interval_s
+        self._last = 0.0
+        self._lock = asyncio.Lock()
+
+    async def acquire(self) -> None:
+        async with self._lock:
+            now = time.monotonic()
+            wait = self.min_interval - (now - self._last)
+            if wait > 0:
+                await asyncio.sleep(wait)
+            self._last = time.monotonic()
+
+
+_limiter = _RateLimiter()
+
+
+class _TinyCache:
+    """TTL cache for idempotent GETs."""
+
+    def __init__(self) -> None:
+        self._data: dict[str, tuple[float, Any]] = {}
+
+    def get(self, key: str, ttl_s: float) -> Any | None:
+        hit = self._data.get(key)
+        if not hit:
+            return None
+        ts, value = hit
+        if time.monotonic() - ts > ttl_s:
+            return None
+        return value
+
+    def set(self, key: str, value: Any) -> None:
+        self._data[key] = (time.monotonic(), value)
+
+
+_cache = _TinyCache()
+
+
 class SoSoValueClient:
-    """Async SoSoValue client with mock fallback."""
+    """Async SoSoValue client with mock fallback, rate limiting and caching."""
+
+    # TTL per path prefix. Tuned for demo freshness vs rate-limit budget.
+    _CACHE_TTL: dict[str, float] = {
+        "/currencies": 3600,
+        "/btc-treasuries": 600,
+        "/etfs/summary-history": 120,
+        "/news": 45,
+        # Market snapshot / klines / token-economics: 60s by default
+    }
+    _DEFAULT_TTL = 60.0
 
     def __init__(self, api_key: str = "", base_url: str = "") -> None:
         settings = get_settings()
@@ -49,7 +107,7 @@ class SoSoValueClient:
             self._http = httpx.AsyncClient(
                 base_url=self.base_url,
                 headers={"x-soso-api-key": self.api_key} if self.api_key else {},
-                timeout=15.0,
+                timeout=20.0,
             )
         return self._http
 
@@ -58,20 +116,81 @@ class SoSoValueClient:
             await self._http.aclose()
             self._http = None
 
+    def _ttl_for(self, path: str) -> float:
+        for prefix, ttl in self._CACHE_TTL.items():
+            if path.startswith(prefix):
+                return ttl
+        return self._DEFAULT_TTL
+
+    @staticmethod
+    def _cache_key(path: str, params: dict[str, Any]) -> str:
+        return f"{path}?{sorted(params.items())}"
+
     async def _get(self, path: str, params: dict[str, Any] | None = None) -> Any:
+        params = params or {}
         if self.mock:
-            return _mock_response(path, params or {})
+            return _mock_response(path, params)
+
+        key = self._cache_key(path, params)
+        hit = _cache.get(key, self._ttl_for(path))
+        if hit is not None:
+            return hit
+
         client = await self._client()
-        async for attempt in AsyncRetrying(
-            stop=stop_after_attempt(3),
-            wait=wait_exponential(multiplier=0.3, min=0.3, max=3),
-            retry=retry_if_exception_type((httpx.HTTPError,)),
-            reraise=True,
-        ):
-            with attempt:
+        attempts = 5
+        backoff_base = 0.8
+        last_exc: Exception | None = None
+        for i in range(attempts):
+            await _limiter.acquire()
+            try:
                 r = await client.get(path, params=params)
+                if r.status_code == 429:
+                    # SoSoValue structured body: details.retry_after (seconds)
+                    retry_after = None
+                    try:
+                        body = r.json()
+                        retry_after = (body.get("details") or {}).get("retry_after")
+                    except Exception:
+                        pass
+                    if retry_after is None:
+                        ra_hdr = r.headers.get("retry-after")
+                        retry_after = float(ra_hdr) if ra_hdr else None
+                    sleep_s = (
+                        float(retry_after)
+                        if retry_after is not None
+                        else backoff_base * (2 ** i) + random.random()
+                    )
+                    log.warning(
+                        "soso_rate_limited",
+                        path=path,
+                        attempt=i + 1,
+                        sleep_s=round(sleep_s, 2),
+                    )
+                    last_exc = httpx.HTTPStatusError(
+                        "429 Too Many Requests", request=r.request, response=r
+                    )
+                    await asyncio.sleep(min(sleep_s, 60.0))
+                    continue
                 r.raise_for_status()
-                return r.json()
+                payload = r.json()
+                # SoSoValue wraps successful responses as {code, message, data}.
+                # Agents and the UI expect the unwrapped `data`.
+                if isinstance(payload, dict) and "data" in payload and "code" in payload:
+                    data = payload.get("data")
+                else:
+                    data = payload
+                _cache.set(key, data)
+                return data
+            except httpx.HTTPStatusError as e:
+                if 400 <= e.response.status_code < 500 and e.response.status_code != 429:
+                    raise
+                last_exc = e
+            except httpx.HTTPError as e:
+                last_exc = e
+            await asyncio.sleep(backoff_base * (2 ** i))
+        if last_exc is None:
+            last_exc = RuntimeError(f"exhausted retries for {path}")
+        raise last_exc
 
     # ------------------------------------------------------------------ endpoints
     async def currencies(self) -> list[dict]:
