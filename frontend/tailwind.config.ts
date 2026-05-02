@@ -5,18 +5,24 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        bg: "#0b0d12",
-        panel: "#141821",
-        panel2: "#1b2130",
-        border: "#242a38",
+        bg: "#070912",
+        panel: "#0f1420",
+        panel2: "#141a28",
+        panel3: "#1a2030",
+        border: "#1f2636",
         text: "#e5e7eb",
-        muted: "#8a93a6",
-        brand: "#7c5cff",
+        muted: "#7a8398",
+        brand: "#8b6cff",
+        brand2: "#a48bff",
         long: "#22c55e",
         short: "#ef4444",
+        warn: "#f59e0b",
       },
       fontFamily: {
-        mono: ["ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
+        mono: ['"JetBrains Mono"', "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
+      },
+      boxShadow: {
+        glow: "0 0 24px -8px rgba(139, 108, 255, 0.4)",
       },
     },
   },

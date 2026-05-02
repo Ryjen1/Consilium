@@ -1,12 +1,22 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { api, type BacktestResp, type ExecutionMode, type Health, type PortfolioResp, type RunResult, type Signal, type Trade } from "@/lib/api";
+import {
+  api,
+  type BacktestResp,
+  type ExecutionMode,
+  type Health,
+  type PortfolioResp,
+  type RunResult,
+  type Signal,
+  type Trade,
+} from "@/lib/api";
 import { AgentPanel } from "@/components/agent-panel";
 import { DecisionLog } from "@/components/decision-log";
 import { PortfolioCard } from "@/components/portfolio-card";
 import { PnLChart } from "@/components/pnl-chart";
-import { RunCycleButton } from "@/components/run-cycle-button";
-import { ModeToggle } from "@/components/mode-toggle";
+import { Sidebar } from "@/components/sidebar";
+import { Topbar } from "@/components/topbar";
+import { KpiStrip } from "@/components/kpi-strip";
 
 export default function Dashboard() {
   const [health, setHealth] = useState<Health | null>(null);
@@ -22,7 +32,7 @@ export default function Dashboard() {
   const refreshLedger = useCallback(async () => {
     try {
       const [tr, pf] = await Promise.all([
-        api<Trade[]>("/api/trades?limit=30"),
+        api<Trade[]>("/api/trades?limit=20"),
         api<PortfolioResp>("/api/portfolio"),
       ]);
       setTrades(tr);
@@ -32,17 +42,21 @@ export default function Dashboard() {
     }
   }, []);
 
+  const refreshHealth = useCallback(async () => {
+    try {
+      const h = await api<Health>("/api/health");
+      setHealth(h);
+    } catch (e: any) {
+      setErr(e.message);
+    }
+  }, []);
+
   useEffect(() => {
     (async () => {
-      try {
-        const h = await api<Health>("/api/health");
-        setHealth(h);
-        await refreshLedger();
-      } catch (e: any) {
-        setErr(e.message);
-      }
+      await refreshHealth();
+      await refreshLedger();
     })();
-  }, [refreshLedger]);
+  }, [refreshHealth, refreshLedger]);
 
   async function runCycle() {
     if (mode.startsWith("sodex")) {
@@ -66,7 +80,7 @@ export default function Dashboard() {
       });
       setSignals(r.signals);
       if (r.errors?.length) setErr(r.errors.join(" · "));
-      await refreshLedger();
+      await Promise.all([refreshLedger(), refreshHealth()]);
     } catch (e: any) {
       setErr(e.message);
     } finally {
@@ -94,115 +108,99 @@ export default function Dashboard() {
     }
   }
 
+  async function resetLedger() {
+    if (!window.confirm("Clear all paper trades and agent decisions?")) return;
+    try {
+      await api("/api/reset", { method: "POST" });
+      setSignals([]);
+      setBacktest(null);
+      await refreshLedger();
+    } catch (e: any) {
+      setErr(e.message);
+    }
+  }
+
   return (
-    <main className="max-w-7xl mx-auto px-6 py-8 flex flex-col gap-6">
-      <header className="flex items-center justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">
-            SoSo<span className="text-brand">Fund</span>
-          </h1>
-          <p className="text-sm text-muted">
-            Crypto-native AI hedge fund · SoSoValue Terminal → SoDEX → ValueChain
-          </p>
-        </div>
-        <div className="flex items-center gap-3 flex-wrap">
-          {health && (
-            <div className="flex items-center gap-2 text-xs flex-wrap">
-              <span
-                className={
-                  "pill " +
-                  (health.mock_mode
-                    ? "bg-panel2 text-muted"
-                    : "bg-long/20 text-long")
-                }
+    <div className="flex min-h-screen">
+      <Sidebar />
+
+      <div className="flex-1 flex flex-col min-w-0">
+        <Topbar
+          health={health}
+          mode={mode}
+          setMode={setMode}
+          onRun={runCycle}
+          onReset={resetLedger}
+          running={runningCycle}
+        />
+
+        <main className="flex-1 px-6 py-5 flex flex-col gap-5 max-w-[1400px] w-full mx-auto">
+          {err && (
+            <div className="card border-short/40 bg-short/5 text-short text-xs px-4 py-2.5 flex items-start gap-2">
+              <span className="mono uppercase tracking-wider opacity-70">err</span>
+              <span className="flex-1">{err}</span>
+              <button
+                onClick={() => setErr(null)}
+                className="opacity-50 hover:opacity-100"
               >
-                {health.mock_mode ? "MOCK SOSO" : "LIVE SOSO"}
-              </span>
-              {health.soso_quota_exhausted && (
-                <span className="pill bg-short/20 text-short">SOSO QUOTA</span>
-              )}
-              {health.sodex && (
-                <span
-                  className={
-                    "pill " +
-                    (health.sodex.execution_ready
-                      ? "bg-brand/20 text-brand"
-                      : "bg-panel2 text-muted")
-                  }
-                >
-                  SODEX {health.sodex.network.toUpperCase()}
-                </span>
-              )}
-              <span className="pill bg-panel2 text-muted">
-                LLM {health.llm_enabled ? "ON" : "OFF"}
-              </span>
+                ×
+              </button>
             </div>
           )}
-          <ModeToggle mode={mode} onChange={setMode} health={health} />
-          <RunCycleButton onRun={runCycle} loading={runningCycle} />
-        </div>
-      </header>
 
-      {err && (
-        <div className="card border-short/50 text-short text-sm">
-          API error: {err}
-        </div>
-      )}
-
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {(health?.agents ?? []).map((a) => (
-          <AgentPanel
-            key={a.name}
-            name={a.name}
-            description={a.description}
-            signals={signals}
+          <KpiStrip
+            portfolio={portfolio}
+            health={health}
+            backtest={backtest}
+            trades={trades}
           />
-        ))}
-      </section>
 
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <div className="lg:col-span-2 flex flex-col gap-4">
-          <DecisionLog trades={trades} />
-          <PnLChart data={backtest} />
-          <div>
-            <button
-              onClick={runBacktest}
-              disabled={runningBt}
-              className="text-sm text-brand hover:underline disabled:opacity-50"
-            >
-              {runningBt ? "Running backtest…" : "Run 30-day backtest"}
-            </button>
-          </div>
-        </div>
-        <div className="flex flex-col gap-4">
-          <PortfolioCard data={portfolio} />
-          <div className="card">
-            <h3 className="font-semibold mb-2">Roadmap</h3>
-            <ol className="text-xs text-muted space-y-2 leading-relaxed">
-              <li>
-                <span className="text-long font-mono">Wave 1 (now)</span> — 3 agents, paper
-                trading, SQLite ledger, backtester.
-              </li>
-              <li>
-                <span className="text-muted font-mono">Wave 2</span> — 4 more agents, SoDEX
-                testnet execution, configurable risk.
-              </li>
-              <li>
-                <span className="text-muted font-mono">Wave 3</span> — ValueChain
-                on-chain audit log, multi-strategy portfolios.
-              </li>
-              <li>
-                <span className="text-muted font-mono">Wave 4</span> — Public strategy
-                marketplace on SSI.
-              </li>
-            </ol>
-          </div>
-        </div>
-      </section>
+          <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <div className="lg:col-span-2">
+              <PnLChart data={backtest} onRun={runBacktest} loading={runningBt} />
+            </div>
+            <PortfolioCard data={portfolio} />
+          </section>
 
-      <footer className="text-xs text-muted pt-4 border-t border-border">
-        Built for SoSoValue Buildathon · Wave 1 · Powered by 8 SoSoValue endpoints
-      </footer>
-    </main>
+          <section>
+            <div className="flex items-center justify-between mb-2 px-1">
+              <h2 className="label">Analyst Agents</h2>
+              <span className="label">
+                {signals.length} signals · last cycle
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {(health?.agents ?? []).map((a) => (
+                <AgentPanel
+                  key={a.name}
+                  name={a.name}
+                  description={a.description}
+                  signals={signals}
+                />
+              ))}
+            </div>
+          </section>
+
+          <section>
+            <DecisionLog trades={trades} />
+          </section>
+
+          <footer className="pt-4 pb-6 flex items-center justify-between text-[11px] text-muted border-t border-border/50">
+            <div className="flex items-center gap-2">
+              <span className="mono">SoSoFund · Wave 1</span>
+              <span className="opacity-40">·</span>
+              <span>Built for the SoSoValue Buildathon</span>
+            </div>
+            <div className="flex items-center gap-3 mono">
+              <span>SoSoValue 8 endpoints</span>
+              <span className="opacity-40">·</span>
+              <span>SoDEX perps + spot</span>
+              <span className="opacity-40">·</span>
+              <span>EIP-712 signed</span>
+            </div>
+          </footer>
+        </main>
+      </div>
+    </div>
   );
 }

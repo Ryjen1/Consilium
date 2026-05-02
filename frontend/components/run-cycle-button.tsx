@@ -14,12 +14,12 @@ export function RunCycleButton({
     <button
       onClick={onRun}
       disabled={loading}
-      className="flex items-center gap-2 bg-brand hover:bg-brand/80 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg font-medium transition"
+      className="h-9 px-4 rounded-lg bg-gradient-to-b from-brand to-brand/80 hover:from-brand2 hover:to-brand disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-medium flex items-center gap-2 transition shadow-glow"
     >
       {loading ? (
-        <Loader2 className="w-4 h-4 animate-spin" />
+        <Loader2 className="w-3.5 h-3.5 animate-spin" />
       ) : (
-        <Play className="w-4 h-4" />
+        <Play className="w-3.5 h-3.5 fill-white" />
       )}
       {label}
     </button>

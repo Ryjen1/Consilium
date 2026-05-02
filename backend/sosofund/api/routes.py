@@ -5,7 +5,7 @@ from typing import Any
 
 from fastapi import APIRouter
 from pydantic import BaseModel
-from sqlalchemy import desc, select
+from sqlalchemy import delete, desc, select
 
 from ..agents import AGENTS
 from ..backtest import backtest
@@ -150,3 +150,13 @@ async def run_backtest(req: BacktestRequest) -> dict:
     return await backtest(
         universe=req.universe, days=req.days, starting_capital=req.starting_capital
     )
+
+
+@router.post("/reset")
+async def reset_ledger() -> dict:
+    """Wipe the local paper-trading ledger. Handy for demos."""
+    async with get_session() as session:
+        await session.execute(delete(LedgerTrade))
+        await session.execute(delete(Decision))
+        await session.commit()
+    return {"status": "ok", "cleared": True}

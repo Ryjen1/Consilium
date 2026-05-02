@@ -1,6 +1,19 @@
 "use client";
 import type { Signal } from "@/lib/api";
 import clsx from "clsx";
+import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
+
+const DIR_ICON = {
+  long: <ArrowUpRight className="w-3 h-3" />,
+  short: <ArrowDownRight className="w-3 h-3" />,
+  flat: <Minus className="w-3 h-3" />,
+};
+
+const DIR_CLS = {
+  long: "text-long bg-long/10 border-long/20",
+  short: "text-short bg-short/10 border-short/20",
+  flat: "text-muted bg-panel2 border-border",
+};
 
 export function AgentPanel({
   name,
@@ -12,43 +25,66 @@ export function AgentPanel({
   signals: Signal[];
 }) {
   const mine = signals.filter((s) => s.agent === name);
+  const shortName = name.replace(/ /g, "_").toUpperCase();
+  const idle = mine.length === 0;
+
   return (
-    <div className="card flex flex-col gap-3">
-      <div>
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-text">{name}</h3>
-          <span className="pill bg-panel2 text-muted">
-            {mine.length} signal{mine.length !== 1 ? "s" : ""}
+    <div className="card overflow-hidden flex flex-col">
+      <div className="px-4 py-2.5 border-b border-border flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span
+            className={clsx(
+              "w-1.5 h-1.5 rounded-full",
+              idle ? "bg-muted/40" : "bg-long animate-pulse"
+            )}
+          />
+          <span className="mono text-[11px] uppercase tracking-wider text-text">
+            {shortName}
           </span>
         </div>
-        <p className="text-xs text-muted mt-0.5">{description}</p>
+        <span className="label">
+          {mine.length} sig
+        </span>
       </div>
-      <div className="flex flex-col gap-2">
-        {mine.length === 0 && (
-          <p className="text-xs text-muted italic">No active signals this cycle.</p>
+
+      <div className="px-4 py-1.5 text-[11px] text-muted leading-relaxed border-b border-border bg-panel2/30">
+        {description}
+      </div>
+
+      <div className="flex flex-col">
+        {idle && (
+          <div className="px-4 py-6 text-xs text-muted/70 italic text-center">
+            Awaiting next cycle…
+          </div>
         )}
         {mine.map((s, i) => (
           <div
             key={i}
-            className="bg-panel2 rounded-lg p-3 border border-border flex flex-col gap-1.5"
+            className={clsx(
+              "px-4 py-2.5 flex flex-col gap-1.5",
+              i < mine.length - 1 && "border-b border-border/50"
+            )}
           >
             <div className="flex items-center gap-2">
-              <span className="font-mono font-semibold text-sm">{s.symbol}</span>
+              <span className="mono font-semibold text-sm tracking-tight">
+                {s.symbol}
+              </span>
               <span
                 className={clsx(
-                  "pill",
-                  s.direction === "long" && "bg-long/20 text-long",
-                  s.direction === "short" && "bg-short/20 text-short",
-                  s.direction === "flat" && "bg-panel2 text-muted"
+                  "pill inline-flex items-center gap-1 border",
+                  DIR_CLS[s.direction]
                 )}
               >
-                {s.direction.toUpperCase()}
+                {DIR_ICON[s.direction]}
+                {s.direction}
               </span>
-              <span className="pill bg-brand/20 text-brand ml-auto">
-                conf {Math.round(s.confidence * 100)}%
+              <span className="ml-auto mono text-[11px] text-brand2">
+                {Math.round(s.confidence * 100)}%
               </span>
             </div>
-            <p className="text-xs text-text/80 leading-relaxed">{s.reasoning}</p>
+            <p className="text-[11px] text-text/80 leading-relaxed">
+              {s.reasoning}
+            </p>
           </div>
         ))}
       </div>

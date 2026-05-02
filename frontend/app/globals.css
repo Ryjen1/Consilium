@@ -2,20 +2,55 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  color-scheme: dark;
+}
+
 html,
 body {
-  background: #0b0d12;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(124, 92, 255, 0.08), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(34, 197, 94, 0.05), transparent 60%),
+    #070912;
   color: #e5e7eb;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
 }
 
 * {
-  border-color: #242a38;
+  border-color: #1a2030;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #242a38;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #333a4a;
 }
 
 .card {
-  @apply bg-panel border border-border rounded-xl p-4;
+  @apply bg-panel/80 backdrop-blur-sm border border-border rounded-xl;
 }
 
 .pill {
-  @apply text-xs px-2 py-0.5 rounded-full font-mono;
+  @apply text-[10px] px-2 py-0.5 rounded-full font-mono tracking-wider uppercase;
+}
+
+.label {
+  @apply text-[10px] uppercase tracking-widest text-muted font-mono;
+}
+
+.mono {
+  @apply font-mono tabular-nums;
+}
+
+.hairline {
+  @apply border-t border-border/60;
 }
