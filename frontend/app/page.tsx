@@ -14,9 +14,11 @@ import { AgentPanel } from "@/components/agent-panel";
 import { DecisionLog } from "@/components/decision-log";
 import { PortfolioCard } from "@/components/portfolio-card";
 import { PnLChart } from "@/components/pnl-chart";
-import { Sidebar } from "@/components/sidebar";
 import { Topbar } from "@/components/topbar";
 import { KpiStrip } from "@/components/kpi-strip";
+import { HeroPrompt } from "@/components/hero-prompt";
+import { Pipeline } from "@/components/pipeline";
+import { IntegrationsStrip } from "@/components/integrations-strip";
 
 export default function Dashboard() {
   const [health, setHealth] = useState<Health | null>(null);
@@ -28,6 +30,7 @@ export default function Dashboard() {
   const [runningBt, setRunningBt] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const [mode, setMode] = useState<ExecutionMode>("paper");
+  const [runErrors, setRunErrors] = useState<string[]>([]);
 
   const refreshLedger = useCallback(async () => {
     try {
@@ -69,6 +72,7 @@ export default function Dashboard() {
     }
     setRunningCycle(true);
     setErr(null);
+    setRunErrors([]);
     try {
       const r = await api<RunResult>("/api/run", {
         method: "POST",
@@ -79,6 +83,7 @@ export default function Dashboard() {
         }),
       });
       setSignals(r.signals);
+      setRunErrors(r.errors ?? []);
       if (r.errors?.length) setErr(r.errors.join(" · "));
       await Promise.all([refreshLedger(), refreshHealth()]);
     } catch (e: any) {
@@ -114,6 +119,7 @@ export default function Dashboard() {
       await api("/api/reset", { method: "POST" });
       setSignals([]);
       setBacktest(null);
+      setRunErrors([]);
       await refreshLedger();
     } catch (e: any) {
       setErr(e.message);
@@ -121,86 +127,102 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex min-h-screen">
-      <Sidebar />
+    <div className="min-h-screen flex flex-col">
+      <Topbar
+        health={health}
+        mode={mode}
+        setMode={setMode}
+        onRun={runCycle}
+        onReset={resetLedger}
+        running={runningCycle}
+      />
 
-      <div className="flex-1 flex flex-col min-w-0">
-        <Topbar
+      <main className="flex-1 px-6 py-6 flex flex-col gap-5 max-w-[1400px] w-full mx-auto">
+        {err && (
+          <div className="card border-short/40 bg-short/5 text-short text-xs px-4 py-2.5 flex items-start gap-2">
+            <span className="mono uppercase tracking-wider opacity-70">err</span>
+            <span className="flex-1">{err}</span>
+            <button
+              onClick={() => setErr(null)}
+              className="opacity-50 hover:opacity-100"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
+        <section className="flex flex-col gap-3">
+          <div className="flex items-baseline justify-between px-1">
+            <h1 className="text-xl font-semibold tracking-tight">
+              Agentic hedge fund on{" "}
+              <span className="text-brand">SoSoValue</span> +{" "}
+              <span className="text-brand">SoDEX</span>
+            </h1>
+            <span className="label hidden md:block">
+              Wave 1 · shipped · buildathon submission
+            </span>
+          </div>
+          <HeroPrompt onRun={runCycle} running={runningCycle} />
+        </section>
+
+        <KpiStrip
+          portfolio={portfolio}
           health={health}
-          mode={mode}
-          setMode={setMode}
-          onRun={runCycle}
-          onReset={resetLedger}
-          running={runningCycle}
+          backtest={backtest}
+          trades={trades}
         />
 
-        <main className="flex-1 px-6 py-5 flex flex-col gap-5 max-w-[1400px] w-full mx-auto">
-          {err && (
-            <div className="card border-short/40 bg-short/5 text-short text-xs px-4 py-2.5 flex items-start gap-2">
-              <span className="mono uppercase tracking-wider opacity-70">err</span>
-              <span className="flex-1">{err}</span>
-              <button
-                onClick={() => setErr(null)}
-                className="opacity-50 hover:opacity-100"
-              >
-                ×
-              </button>
-            </div>
-          )}
+        <Pipeline
+          running={runningCycle}
+          signals={signals}
+          trades={trades}
+          mode={mode}
+          lastErrors={runErrors}
+        />
 
-          <KpiStrip
-            portfolio={portfolio}
-            health={health}
-            backtest={backtest}
-            trades={trades}
-          />
+        <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2">
+            <PnLChart data={backtest} onRun={runBacktest} loading={runningBt} />
+          </div>
+          <PortfolioCard data={portfolio} />
+        </section>
 
-          <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-2">
-              <PnLChart data={backtest} onRun={runBacktest} loading={runningBt} />
-            </div>
-            <PortfolioCard data={portfolio} />
-          </section>
+        <section>
+          <div className="flex items-center justify-between mb-2 px-1">
+            <h2 className="label">Analyst Agents</h2>
+            <span className="label">
+              {signals.length} signals · last cycle
+            </span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {(health?.agents ?? []).map((a) => (
+              <AgentPanel
+                key={a.name}
+                name={a.name}
+                description={a.description}
+                signals={signals}
+              />
+            ))}
+          </div>
+        </section>
 
-          <section>
-            <div className="flex items-center justify-between mb-2 px-1">
-              <h2 className="label">Analyst Agents</h2>
-              <span className="label">
-                {signals.length} signals · last cycle
-              </span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              {(health?.agents ?? []).map((a) => (
-                <AgentPanel
-                  key={a.name}
-                  name={a.name}
-                  description={a.description}
-                  signals={signals}
-                />
-              ))}
-            </div>
-          </section>
+        <section>
+          <DecisionLog trades={trades} />
+        </section>
 
-          <section>
-            <DecisionLog trades={trades} />
-          </section>
+        <IntegrationsStrip />
 
-          <footer className="pt-4 pb-6 flex items-center justify-between text-[11px] text-muted border-t border-border/50">
-            <div className="flex items-center gap-2">
-              <span className="mono">SoSoFund · Wave 1</span>
-              <span className="opacity-40">·</span>
-              <span>Built for the SoSoValue Buildathon</span>
-            </div>
-            <div className="flex items-center gap-3 mono">
-              <span>SoSoValue 8 endpoints</span>
-              <span className="opacity-40">·</span>
-              <span>SoDEX perps + spot</span>
-              <span className="opacity-40">·</span>
-              <span>EIP-712 signed</span>
-            </div>
-          </footer>
-        </main>
-      </div>
+        <footer className="pt-4 pb-6 flex items-center justify-between text-[11px] text-muted border-t border-border/50">
+          <div className="flex items-center gap-2">
+            <span className="mono">SoSoFund · Wave 1</span>
+            <span className="opacity-40">·</span>
+            <span>Built for the SoSoValue Buildathon</span>
+          </div>
+          <div className="flex items-center gap-3 mono hidden md:flex">
+            <span>Research → Insight → Execution</span>
+          </div>
+        </footer>
+      </main>
     </div>
   );
 }
