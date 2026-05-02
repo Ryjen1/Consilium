@@ -52,8 +52,16 @@ export type Health = {
   status: string;
   mock_mode: boolean;
   llm_enabled: boolean;
+  soso_quota_exhausted?: boolean;
+  sodex?: {
+    network: "testnet" | "mainnet";
+    market_data: "live";
+    execution_ready: boolean;
+  };
   agents: { name: string; description: string }[];
 };
+
+export type ExecutionMode = "paper" | "sodex_testnet" | "sodex_mainnet";
 
 export type PortfolioResp = {
   positions: { symbol: string; net_exposure_usd: number }[];

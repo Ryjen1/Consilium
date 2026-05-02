@@ -1,11 +1,12 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
-import { api, type BacktestResp, type Health, type PortfolioResp, type RunResult, type Signal, type Trade } from "@/lib/api";
+import { api, type BacktestResp, type ExecutionMode, type Health, type PortfolioResp, type RunResult, type Signal, type Trade } from "@/lib/api";
 import { AgentPanel } from "@/components/agent-panel";
 import { DecisionLog } from "@/components/decision-log";
 import { PortfolioCard } from "@/components/portfolio-card";
 import { PnLChart } from "@/components/pnl-chart";
 import { RunCycleButton } from "@/components/run-cycle-button";
+import { ModeToggle } from "@/components/mode-toggle";
 
 export default function Dashboard() {
   const [health, setHealth] = useState<Health | null>(null);
@@ -16,6 +17,7 @@ export default function Dashboard() {
   const [runningCycle, setRunningCycle] = useState(false);
   const [runningBt, setRunningBt] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [mode, setMode] = useState<ExecutionMode>("paper");
 
   const refreshLedger = useCallback(async () => {
     try {
@@ -43,6 +45,14 @@ export default function Dashboard() {
   }, [refreshLedger]);
 
   async function runCycle() {
+    if (mode.startsWith("sodex")) {
+      const ok = window.confirm(
+        mode === "sodex_mainnet"
+          ? "This will place REAL orders on SoDEX MAINNET. Continue?"
+          : "This will place real orders on SoDEX TESTNET. Continue?"
+      );
+      if (!ok) return;
+    }
     setRunningCycle(true);
     setErr(null);
     try {
@@ -51,9 +61,11 @@ export default function Dashboard() {
         body: JSON.stringify({
           universe: ["BTC", "ETH", "SOL", "ARB", "OP"],
           portfolio_value_usd: 100_000,
+          mode,
         }),
       });
       setSignals(r.signals);
+      if (r.errors?.length) setErr(r.errors.join(" · "));
       await refreshLedger();
     } catch (e: any) {
       setErr(e.message);
@@ -93,17 +105,40 @@ export default function Dashboard() {
             Crypto-native AI hedge fund · SoSoValue Terminal → SoDEX → ValueChain
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           {health && (
-            <div className="flex items-center gap-2 text-xs">
-              <span className="pill bg-panel2 text-muted">
-                {health.mock_mode ? "MOCK DATA" : "LIVE SOSO"}
+            <div className="flex items-center gap-2 text-xs flex-wrap">
+              <span
+                className={
+                  "pill " +
+                  (health.mock_mode
+                    ? "bg-panel2 text-muted"
+                    : "bg-long/20 text-long")
+                }
+              >
+                {health.mock_mode ? "MOCK SOSO" : "LIVE SOSO"}
               </span>
+              {health.soso_quota_exhausted && (
+                <span className="pill bg-short/20 text-short">SOSO QUOTA</span>
+              )}
+              {health.sodex && (
+                <span
+                  className={
+                    "pill " +
+                    (health.sodex.execution_ready
+                      ? "bg-brand/20 text-brand"
+                      : "bg-panel2 text-muted")
+                  }
+                >
+                  SODEX {health.sodex.network.toUpperCase()}
+                </span>
+              )}
               <span className="pill bg-panel2 text-muted">
                 LLM {health.llm_enabled ? "ON" : "OFF"}
               </span>
             </div>
           )}
+          <ModeToggle mode={mode} onChange={setMode} health={health} />
           <RunCycleButton onRun={runCycle} loading={runningCycle} />
         </div>
       </header>
