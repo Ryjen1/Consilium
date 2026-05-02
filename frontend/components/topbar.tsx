@@ -5,15 +5,6 @@ import type { ExecutionMode, Health } from "@/lib/api";
 import { ModeToggle } from "./mode-toggle";
 import { RunCycleButton } from "./run-cycle-button";
 
-const NAV = [
-  { id: "dashboard", label: "Dashboard", active: true },
-  { id: "agents", label: "Agents" },
-  { id: "sessions", label: "Sessions" },
-  { id: "backtest", label: "Backtest" },
-  { id: "portfolio", label: "Portfolio" },
-  { id: "leaderboard", label: "Leaderboard" },
-];
-
 export function Topbar({
   health,
   mode,
@@ -42,8 +33,7 @@ export function Topbar({
 
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-bg/80 backdrop-blur-xl">
-      {/* Row 1: brand + nav + wallet/actions */}
-      <div className="px-6 h-14 flex items-center gap-6">
+      <div className="px-6 h-14 flex items-center gap-4">
         <div className="flex items-center gap-2.5 shrink-0">
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-brand to-brand2 flex items-center justify-center text-white text-sm font-bold shadow-glow">
             S
@@ -51,23 +41,10 @@ export function Topbar({
           <div className="text-sm font-semibold tracking-tight">
             SoSo<span className="text-brand">Fund</span>
           </div>
+          <div className="label hidden md:block ml-2 border-l border-border pl-3">
+            Agentic Hedge Fund · Wave 1
+          </div>
         </div>
-
-        <nav className="hidden md:flex items-center gap-1">
-          {NAV.map((n) => (
-            <button
-              key={n.id}
-              className={clsx(
-                "px-3 h-8 rounded-md text-[12px] font-medium tracking-tight transition",
-                n.active
-                  ? "text-text bg-panel2"
-                  : "text-muted hover:text-text hover:bg-panel2/50"
-              )}
-            >
-              {n.label}
-            </button>
-          ))}
-        </nav>
 
         <div className="ml-auto flex items-center gap-2">
           <div className="hidden sm:flex items-center gap-1.5">

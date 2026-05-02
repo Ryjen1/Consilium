@@ -15,6 +15,7 @@ import { DecisionLog } from "@/components/decision-log";
 import { PortfolioCard } from "@/components/portfolio-card";
 import { PnLChart } from "@/components/pnl-chart";
 import { Topbar } from "@/components/topbar";
+import { Sidebar } from "@/components/sidebar";
 import { KpiStrip } from "@/components/kpi-strip";
 import { HeroPrompt } from "@/components/hero-prompt";
 import { Pipeline } from "@/components/pipeline";
@@ -137,7 +138,10 @@ export default function Dashboard() {
         running={runningCycle}
       />
 
-      <main className="flex-1 px-6 py-6 flex flex-col gap-5 max-w-[1400px] w-full mx-auto">
+      <div className="flex-1 flex">
+        <Sidebar />
+
+        <main className="flex-1 px-6 py-6 flex flex-col gap-5 max-w-[1400px] w-full mx-auto min-w-0">
         {err && (
           <div className="card border-short/40 bg-short/5 text-short text-xs px-4 py-2.5 flex items-start gap-2">
             <span className="mono uppercase tracking-wider opacity-70">err</span>
@@ -222,7 +226,8 @@ export default function Dashboard() {
             <span>Research → Insight → Execution</span>
           </div>
         </footer>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
