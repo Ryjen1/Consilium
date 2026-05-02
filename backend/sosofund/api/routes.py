@@ -9,6 +9,7 @@ from sqlalchemy import desc, select
 
 from ..agents import AGENTS
 from ..backtest import backtest
+from ..client import get_client
 from ..config import get_settings
 from ..execution.ledger import Decision, LedgerTrade, get_session
 from ..graph import run_cycle
@@ -30,10 +31,17 @@ class BacktestRequest(BaseModel):
 @router.get("/health")
 async def health() -> dict:
     s = get_settings()
+    c = get_client()
     return {
         "status": "ok",
         "mock_mode": s.mock_mode,
         "llm_enabled": s.llm_enabled,
+        "soso_quota_exhausted": c.quota_exhausted,
+        "sodex": {
+            "network": s.sodex_network,
+            "market_data": "live",  # always on, no key required
+            "execution_ready": s.sodex_execution_ready,
+        },
         "agents": [{"name": a.name, "description": a.description} for a in AGENTS],
     }
 

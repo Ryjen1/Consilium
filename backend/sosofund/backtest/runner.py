@@ -14,19 +14,41 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from ..agents import AGENTS
-from ..client import get_client, symbol_to_id
 from ..graph.portfolio_manager import portfolio_manager
 from ..graph.risk_manager import risk_manager
 from ..graph.state import FundState
+from ..sodex import get_sodex_client
+
+
+# Map SoSoFund universe symbols to SoDEX perps symbols.
+# SoDEX exposes 40+ perps markets; we stick to the liquid majors for Wave 1.
+_SODEX_PERPS_SYMBOL = {
+    "BTC": "BTC-USD",
+    "ETH": "ETH-USD",
+    "SOL": "SOL-USD",
+    "XRP": "XRP-USD",
+    "AVAX": "AVAX-USD",
+    # ARB / OP not on SoDEX testnet perps today; backtester falls back to empty.
+}
 
 
 async def _price_series(symbol: str, limit: int = 60) -> list[tuple[int, float]]:
-    client = get_client()
-    cid = await symbol_to_id(symbol, client)
-    if not cid:
+    """Daily close series for a universe symbol, via SoDEX perps klines.
+
+    Offloads the highest-volume data call off SoSoValue (which has a strict
+    20/min quota) onto SoDEX (1200 weight/min, unsigned).
+    """
+    sodex_sym = _SODEX_PERPS_SYMBOL.get(symbol.upper())
+    if not sodex_sym:
         return []
-    rows = await client.currency_klines(cid, limit=limit)
-    return [(int(r["timestamp"]), float(r["close"])) for r in rows]
+    rows = await get_sodex_client().perps_klines(sodex_sym, interval="1D", limit=limit)
+    out: list[tuple[int, float]] = []
+    for r in rows:
+        try:
+            out.append((int(r["t"]), float(r["c"])))
+        except (KeyError, ValueError, TypeError):
+            continue
+    return sorted(out, key=lambda x: x[0])
 
 
 async def backtest(
