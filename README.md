@@ -5,12 +5,18 @@
 
 SoSoFund is a multi-agent AI hedge fund that reads the crypto market through
 the **SoSoValue Terminal API**, reasons about it with specialized analyst
-agents, and executes through a paper ledger today — with **SoDEX**
-(execution layer) and **ValueChain** (on-chain audit log) as milestones on the
-Wave 2–4 roadmap.
+agents, and executes through **SoDEX** — SoSoValue's own on-chain DEX — with
+a paper-trading fallback for safe development.
 
-It is a direct answer to the Buildathon brief: *"the market is no longer about
-access to information — it's about turning information into execution."*
+Two execution modes ship in Wave 1:
+
+- **Paper** — trades go to a local SQLite ledger. Safe default.
+- **SoDEX Testnet** — real EIP-712-signed perps orders posted to
+  `testnet-gw.sodex.dev`. Same agent pipeline, same UI, real on-chain fills.
+
+This is a direct answer to the Buildathon brief:
+*"the market is no longer about access to information — it's about turning
+information into execution."*
 
 ## The agents
 
@@ -31,32 +37,36 @@ runs through LangGraph.
 ## Architecture
 
 ```
-         ┌─────────────────────────────────────────────────┐
-         │                SoSoValue Terminal               │
-         │   ETF flows · token economics · news · klines   │
-         └─────────────────────────────────────────────────┘
-                               │
-              ┌────────────────┼────────────────┐
-              ▼                ▼                ▼
-        ┌───────────┐   ┌───────────┐    ┌───────────┐
-        │  ETF Flow │   │  Unlock   │    │    KOL    │
-        │   Agent   │   │   Risk    │    │ Narrative │
-        └───────────┘   └───────────┘    └───────────┘
-              │                │                │
-              └────────────────┼────────────────┘
-                               ▼
-                       ┌───────────────┐
-                       │ Risk Manager  │  position sizing, caps
-                       └───────────────┘
-                               ▼
-                       ┌───────────────┐
-                       │   Portfolio   │  → Trade orders
-                       └───────────────┘
-                               ▼
-                       ┌───────────────┐
-                       │ Paper Executor│  SQLite ledger
-                       │ (Wave 2: SoDEX)│
-                       └───────────────┘
+     ┌─────────────────────────────┐     ┌───────────────────────────────┐
+     │     SoSoValue Terminal      │     │           SoDEX               │
+     │  ETF flows · unlocks · news │     │  perps klines · tickers       │
+     └─────────────────────────────┘     └───────────────────────────────┘
+                   │                                   │
+          ┌────────┼────────┐                          │
+          ▼        ▼        ▼                          │
+    ┌─────────┐ ┌───────┐ ┌─────────────┐              │
+    │ETF Flow │ │Unlock │ │   KOL       │              │
+    │  Agent  │ │ Risk  │ │ Narrative   │              │
+    └─────────┘ └───────┘ └─────────────┘              │
+          │        │        │                          │
+          └────────┼────────┘                          │
+                   ▼                                   │
+           ┌───────────────┐                           │
+           │ Risk Manager  │  position sizing, caps    │
+           └───────────────┘                           │
+                   ▼                                   │
+           ┌───────────────┐                           │
+           │  Portfolio    │  → Trade orders           │
+           └───────────────┘                           │
+                   │                                   │
+                   ▼                                   │
+        ┌──────────┴──────────┐                        │
+        ▼                     ▼                        │
+  ┌───────────┐         ┌───────────────┐              │
+  │  Paper    │         │    SoDEX      │◀─ mark px ───┘
+  │ Executor  │         │   Executor    │     EIP-712 signed perps orders
+  │  SQLite   │         │ testnet/mnet  │     → mainnet-gw.sodex.dev
+  └───────────┘         └───────────────┘        (or testnet-gw.sodex.dev)
 ```
 
 ## Quick start
@@ -76,8 +86,26 @@ make dev-frontend
 # 4. Open http://localhost:3000 and click "Run Cycle"
 ```
 
-To use real SoSoValue data, set `SOSO_API_KEY` in `backend/.env`.
-An optional `OPENAI_API_KEY` enriches agent reasoning with LLM summaries.
+### Enabling live data and live execution
+
+Edit `backend/.env`:
+
+```bash
+# Real SoSoValue data (optional; free tier works, or use mock fallback)
+SOSO_API_KEY=<your-key>
+
+# Real SoDEX testnet trades (optional, opt-in per run via UI toggle)
+SODEX_NETWORK=testnet
+SODEX_EVM_PRIVATE_KEY=<0x...the private key of a testnet wallet>
+SODEX_EVM_ADDRESS=<0x...the matching 0x address>
+SODEX_PERPS_ACCOUNT_ID=0
+
+# LLM reasoning (optional)
+OPENAI_API_KEY=<your-key>
+```
+
+Generate a fresh EVM wallet for testnet — **never reuse a mainnet key**.
+Fund it from a SoDEX testnet faucet (ask in the Buildathon chat for the link).
 
 ## What the demo shows
 
@@ -108,8 +136,8 @@ The AKINDO Buildathon rewards continuous progress across waves. Our plan:
 
 | Wave | Scope |
 |---|---|
-| **1 — shipped** | 3 agents, LangGraph pipeline, paper executor, SQLite ledger, FastAPI backend, Next.js dashboard, 30-day backtester. |
-| **2** | +4 agents (Macro, mNAV Treasury Discount, Liquidity-Depth, Sector Rotation). SoDEX testnet execution. User-configurable risk limits. |
+| **1 — shipped** | 3 agents, LangGraph pipeline, SQLite ledger, FastAPI backend, Next.js dashboard, 30-day backtester on SoDEX klines, **EIP-712 signed perps execution on SoDEX testnet**, user-selectable paper / testnet modes. |
+| **2** | +4 agents (Macro, mNAV Treasury Discount, Liquidity-Depth, Sector Rotation). Limit orders + TP/SL + leverage management. User-configurable risk limits. |
 | **3** | ValueChain tx logging as the immutable audit trail for every decision. Strategy versioning, multi-strategy portfolios. |
 | **4** | Public strategy marketplace built on SSI — users can deposit into any public SoSoFund strategy, auto-rebalanced through SoDEX. |
 
@@ -117,8 +145,9 @@ The AKINDO Buildathon rewards continuous progress across waves. Our plan:
 
 - **Backend:** Python 3.11 · FastAPI · LangGraph · httpx · SQLAlchemy · SQLite · Pydantic v2
 - **Frontend:** Next.js 14 · Tailwind · Recharts · TypeScript
-- **Data:** SoSoValue Terminal API (32 endpoints catalogued, 8 integrated in Wave 1)
-- **Execution:** Paper ledger today · SoDEX (Wave 2) · ValueChain audit (Wave 3)
+- **Data:** SoSoValue Terminal API (32 endpoints catalogued, 8 integrated) + SoDEX market data
+- **Execution:** Paper ledger + **SoDEX testnet perps (EIP-712 signed)** · ValueChain audit (Wave 3)
+- **Signing:** `eth-account` (EIP-712 typed data, 0x01-prefixed typed signatures)
 
 ## Project layout
 
@@ -126,15 +155,19 @@ The AKINDO Buildathon rewards continuous progress across waves. Our plan:
 sosofund/
 ├── backend/
 │   └── sosofund/
-│       ├── client/sosovalue.py      SoSoValue async client + mock fixtures
+│       ├── client/sosovalue.py      SoSoValue async client (mock + quota-aware fallback)
+│       ├── client/resolver.py       Symbol → currency_id cache
+│       ├── sodex/client.py          SoDEX REST client (spot + perps, testnet + mainnet)
+│       ├── sodex/signer.py          EIP-712 typed-data signer
+│       ├── sodex/executor.py        Perps testnet executor (market orders, safety caps)
 │       ├── agents/                  ETF Flow · Unlock Risk · KOL Narrative
-│       ├── graph/                   LangGraph pipeline · RiskMgr · PortfolioMgr
+│       ├── graph/                   LangGraph pipeline · RiskMgr · PortfolioMgr · mode switch
 │       ├── execution/               Paper executor · SQLite ledger
-│       ├── backtest/                30-day replay on SoSo klines
-│       └── api/                     FastAPI routes
+│       ├── backtest/                30-day replay on SoDEX perps klines
+│       └── api/                     FastAPI routes with mode-aware /run
 └── frontend/
-    ├── app/page.tsx                 Dashboard
-    └── components/                  AgentPanel · DecisionLog · PortfolioCard · PnLChart
+    ├── app/page.tsx                 Dashboard with Paper / SoDEX toggle
+    └── components/                  AgentPanel · DecisionLog · PortfolioCard · PnLChart · ModeToggle
 ```
 
 ## Credits
