@@ -1,0 +1,42 @@
+[project]
+name = "sosofund"
+version = "0.1.0"
+description = "Crypto-native AI hedge fund on SoSoValue Terminal + SoDEX + ValueChain"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "httpx>=0.27",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.4",
+    "langgraph>=0.2.50",
+    "langchain-openai>=0.2",
+    "langchain-core>=0.3",
+    "sqlalchemy>=2.0",
+    "aiosqlite>=0.20",
+    "python-dotenv>=1.0",
+    "tenacity>=9.0",
+    "structlog>=24.4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.7",
+    "mypy>=1.13",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["sosofund"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
