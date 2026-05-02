@@ -1,233 +1,315 @@
-"use client";
-import { useCallback, useEffect, useState } from "react";
-import {
-  api,
-  type BacktestResp,
-  type ExecutionMode,
-  type Health,
-  type PortfolioResp,
-  type RunResult,
-  type Signal,
-  type Trade,
-} from "@/lib/api";
-import { AgentPanel } from "@/components/agent-panel";
-import { DecisionLog } from "@/components/decision-log";
-import { PortfolioCard } from "@/components/portfolio-card";
-import { PnLChart } from "@/components/pnl-chart";
-import { Topbar } from "@/components/topbar";
-import { Sidebar } from "@/components/sidebar";
-import { KpiStrip } from "@/components/kpi-strip";
-import { HeroPrompt } from "@/components/hero-prompt";
-import { Pipeline } from "@/components/pipeline";
-import { IntegrationsStrip } from "@/components/integrations-strip";
+import Link from "next/link";
+import { ArrowRight, Brain, Network, Shield, Zap } from "lucide-react";
 
-export default function Dashboard() {
-  const [health, setHealth] = useState<Health | null>(null);
-  const [signals, setSignals] = useState<Signal[]>([]);
-  const [trades, setTrades] = useState<Trade[]>([]);
-  const [portfolio, setPortfolio] = useState<PortfolioResp | null>(null);
-  const [backtest, setBacktest] = useState<BacktestResp | null>(null);
-  const [runningCycle, setRunningCycle] = useState(false);
-  const [runningBt, setRunningBt] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-  const [mode, setMode] = useState<ExecutionMode>("paper");
-  const [runErrors, setRunErrors] = useState<string[]>([]);
+const STEPS = [
+  {
+    icon: Brain,
+    title: "Agents read the market",
+    body: "Three specialized analysts read SoSoValue Terminal: ETF flows, token-unlock risk, and KOL narrative momentum.",
+  },
+  {
+    icon: Shield,
+    title: "Risk manager sizes positions",
+    body: "Multi-agent signals are aggregated, opposing directions cancel, and every position is capped at 10% of book.",
+  },
+  {
+    icon: Network,
+    title: "Portfolio manager routes trades",
+    body: "Sized targets become orders against a paper ledger or directly onto SoDEX testnet.",
+  },
+  {
+    icon: Zap,
+    title: "SoDEX executes on-chain",
+    body: "EIP-712-signed perps orders post to SoDEX testnet in one round-trip. Every decision is audited.",
+  },
+];
 
-  const refreshLedger = useCallback(async () => {
-    try {
-      const [tr, pf] = await Promise.all([
-        api<Trade[]>("/api/trades?limit=20"),
-        api<PortfolioResp>("/api/portfolio"),
-      ]);
-      setTrades(tr);
-      setPortfolio(pf);
-    } catch (e: any) {
-      setErr(e.message);
-    }
-  }, []);
+const FEATURES = [
+  {
+    title: "SoSoValue-native",
+    body: "8 Terminal endpoints integrated across the agents, plus the full 32-endpoint surface catalogued in the client.",
+  },
+  {
+    title: "Real on-chain execution",
+    body: "EIP-712 signer + SoDEX perps executor. Not a paper-trading toy — real testnet orders with real fills.",
+  },
+  {
+    title: "Research-to-execution loop",
+    body: "One click runs agents, risk manager, portfolio manager, and executor. Closes in ~3 seconds.",
+  },
+  {
+    title: "Backtesting on real prices",
+    body: "30-day equity curve replayed on live SoDEX klines for BTC, ETH, SOL, XRP, AVAX.",
+  },
+  {
+    title: "Multi-wave roadmap",
+    body: "Wave 1 ships real execution. Waves 2-4 add more agents, leverage, ValueChain audit, and an SSI marketplace.",
+  },
+  {
+    title: "Safety by default",
+    body: "Testnet first, per-trade notional caps, whitelisted symbols, explicit confirm before any signed call.",
+  },
+];
 
-  const refreshHealth = useCallback(async () => {
-    try {
-      const h = await api<Health>("/api/health");
-      setHealth(h);
-    } catch (e: any) {
-      setErr(e.message);
-    }
-  }, []);
+const INTEGRATIONS = [
+  { name: "SoSoValue Terminal", tag: "8 endpoints" },
+  { name: "SoDEX Perps", tag: "EIP-712 signed" },
+  { name: "SoDEX Spot", tag: "market data" },
+  { name: "SSI Protocol", tag: "Wave 4" },
+  { name: "ValueChain", tag: "Wave 3" },
+  { name: "LangGraph", tag: "orchestration" },
+];
 
-  useEffect(() => {
-    (async () => {
-      await refreshHealth();
-      await refreshLedger();
-    })();
-  }, [refreshHealth, refreshLedger]);
+const WAVES = [
+  {
+    label: "Wave 1",
+    title: "Shipped",
+    body: "3 agents, LangGraph pipeline, paper + SoDEX testnet execution, 30-day backtester, dashboard.",
+    shipped: true,
+  },
+  {
+    label: "Wave 2",
+    title: "More agents, better orders",
+    body: "+4 agents (Macro, mNAV, Liquidity, Sector). Limit orders, TP/SL, leverage, configurable risk.",
+    shipped: false,
+  },
+  {
+    label: "Wave 3",
+    title: "On-chain audit log",
+    body: "Every decision logged as a ValueChain tx. Strategy versioning, multi-strategy portfolios.",
+    shipped: false,
+  },
+  {
+    label: "Wave 4",
+    title: "Strategy marketplace on SSI",
+    body: "Users deposit into public SoSoFund strategies, auto-rebalanced through SoDEX.",
+    shipped: false,
+  },
+];
 
-  async function runCycle() {
-    if (mode.startsWith("sodex")) {
-      const ok = window.confirm(
-        mode === "sodex_mainnet"
-          ? "This will place REAL orders on SoDEX MAINNET. Continue?"
-          : "This will place real orders on SoDEX TESTNET. Continue?"
-      );
-      if (!ok) return;
-    }
-    setRunningCycle(true);
-    setErr(null);
-    setRunErrors([]);
-    try {
-      const r = await api<RunResult>("/api/run", {
-        method: "POST",
-        body: JSON.stringify({
-          universe: ["BTC", "ETH", "SOL", "ARB", "OP"],
-          portfolio_value_usd: 100_000,
-          mode,
-        }),
-      });
-      setSignals(r.signals);
-      setRunErrors(r.errors ?? []);
-      if (r.errors?.length) setErr(r.errors.join(" · "));
-      await Promise.all([refreshLedger(), refreshHealth()]);
-    } catch (e: any) {
-      setErr(e.message);
-    } finally {
-      setRunningCycle(false);
-    }
-  }
-
-  async function runBacktest() {
-    setRunningBt(true);
-    setErr(null);
-    try {
-      const b = await api<BacktestResp>("/api/backtest", {
-        method: "POST",
-        body: JSON.stringify({
-          universe: ["BTC", "ETH", "SOL", "ARB", "OP"],
-          days: 30,
-          starting_capital: 100_000,
-        }),
-      });
-      setBacktest(b);
-    } catch (e: any) {
-      setErr(e.message);
-    } finally {
-      setRunningBt(false);
-    }
-  }
-
-  async function resetLedger() {
-    if (!window.confirm("Clear all paper trades and agent decisions?")) return;
-    try {
-      await api("/api/reset", { method: "POST" });
-      setSignals([]);
-      setBacktest(null);
-      setRunErrors([]);
-      await refreshLedger();
-    } catch (e: any) {
-      setErr(e.message);
-    }
-  }
-
+export default function Landing() {
   return (
     <div className="min-h-screen flex flex-col">
-      <Topbar
-        health={health}
-        mode={mode}
-        setMode={setMode}
-        onRun={runCycle}
-        onReset={resetLedger}
-        running={runningCycle}
-      />
-
-      <div className="flex-1 flex">
-        <Sidebar />
-
-        <main className="flex-1 px-6 py-6 flex flex-col gap-5 max-w-[1400px] w-full mx-auto min-w-0">
-        {err && (
-          <div className="card border-short/40 bg-short/5 text-short text-xs px-4 py-2.5 flex items-start gap-2">
-            <span className="mono uppercase tracking-wider opacity-70">err</span>
-            <span className="flex-1">{err}</span>
-            <button
-              onClick={() => setErr(null)}
-              className="opacity-50 hover:opacity-100"
+      <header className="sticky top-0 z-30 border-b border-border bg-bg/80 backdrop-blur-xl">
+        <div className="px-6 h-14 flex items-center gap-4 max-w-[1200px] mx-auto w-full">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-brand to-brand2 flex items-center justify-center text-white text-sm font-bold shadow-glow">
+              S
+            </div>
+            <div className="text-sm font-semibold tracking-tight">
+              SoSo<span className="text-brand">Fund</span>
+            </div>
+          </div>
+          <nav className="hidden md:flex items-center gap-1 ml-4">
+            <a href="#how" className="px-3 h-8 rounded-md text-[12px] text-muted hover:text-text flex items-center transition">How it works</a>
+            <a href="#features" className="px-3 h-8 rounded-md text-[12px] text-muted hover:text-text flex items-center transition">Features</a>
+            <a href="#integrations" className="px-3 h-8 rounded-md text-[12px] text-muted hover:text-text flex items-center transition">Integrations</a>
+            <a href="#roadmap" className="px-3 h-8 rounded-md text-[12px] text-muted hover:text-text flex items-center transition">Roadmap</a>
+          </nav>
+          <div className="ml-auto flex items-center gap-2">
+            <span className="pill bg-long/15 text-long border border-long/30 hidden sm:inline-flex">
+              Wave 1 · Live on Testnet
+            </span>
+            <Link
+              href="/dapp"
+              className="h-9 px-4 rounded-lg bg-gradient-to-b from-brand to-brand/80 hover:from-brand2 hover:to-brand text-white text-sm font-medium flex items-center gap-1.5 shadow-glow transition"
             >
-              ×
-            </button>
+              Launch App
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
           </div>
-        )}
+        </div>
+      </header>
 
-        <section className="flex flex-col gap-3">
-          <div className="flex items-baseline justify-between px-1">
-            <h1 className="text-xl font-semibold tracking-tight">
-              Agentic hedge fund on{" "}
-              <span className="text-brand">SoSoValue</span> +{" "}
-              <span className="text-brand">SoDEX</span>
-            </h1>
-            <span className="label hidden md:block">
-              Wave 1 · shipped · buildathon submission
+      <main className="flex-1 max-w-[1200px] mx-auto w-full px-6">
+        <section className="pt-16 pb-20 flex flex-col items-center text-center gap-6">
+          <span className="pill bg-brand/10 text-brand border border-brand/30">
+            SoSoValue Buildathon · Wave 1 Submission
+          </span>
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tight max-w-3xl leading-[1.05]">
+            AI agents that turn{" "}
+            <span className="text-brand">SoSoValue research</span> into{" "}
+            <span className="text-brand">SoDEX execution</span>.
+          </h1>
+          <p className="text-base md:text-lg text-muted max-w-2xl leading-relaxed">
+            A crypto-native hedge fund run by specialized analyst agents. Reads the
+            market through SoSoValue Terminal, sizes positions through a risk
+            manager, and executes real EIP-712-signed perps orders on SoDEX — all
+            in one agent loop.
+          </p>
+          <div className="flex items-center gap-3 pt-2">
+            <Link
+              href="/dapp"
+              className="h-11 px-6 rounded-lg bg-gradient-to-b from-brand to-brand/80 hover:from-brand2 hover:to-brand text-white text-sm font-medium flex items-center gap-2 shadow-glow transition"
+            >
+              Launch App
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+            <a
+              href="#how"
+              className="h-11 px-6 rounded-lg border border-border hover:border-brand text-text text-sm font-medium flex items-center gap-2 transition"
+            >
+              How it works
+            </a>
+          </div>
+          <div className="mt-8 flex items-center gap-6 text-xs text-muted">
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-long animate-pulse" />
+              3 agents live
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-long animate-pulse" />
+              SoDEX testnet execution
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-long animate-pulse" />
+              8 SoSoValue endpoints
             </span>
           </div>
-          <HeroPrompt onRun={runCycle} running={runningCycle} />
         </section>
 
-        <KpiStrip
-          portfolio={portfolio}
-          health={health}
-          backtest={backtest}
-          trades={trades}
-        />
-
-        <Pipeline
-          running={runningCycle}
-          signals={signals}
-          trades={trades}
-          mode={mode}
-          lastErrors={runErrors}
-        />
-
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2">
-            <PnLChart data={backtest} onRun={runBacktest} loading={runningBt} />
+        <section id="how" className="py-16 border-t border-border/60">
+          <div className="flex items-baseline justify-between mb-10">
+            <div>
+              <div className="label mb-2">How it works</div>
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
+                Research → Insight → Execution
+              </h2>
+            </div>
+            <span className="label hidden md:block">closes in ~3 seconds</span>
           </div>
-          <PortfolioCard data={portfolio} />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {STEPS.map((s, i) => {
+              const Icon = s.icon;
+              return (
+                <div key={i} className="card p-5 flex flex-col gap-3">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-brand/10 border border-brand/30 flex items-center justify-center text-brand">
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <span className="label">Step 0{i + 1}</span>
+                  </div>
+                  <h3 className="font-semibold text-sm">{s.title}</h3>
+                  <p className="text-xs text-muted leading-relaxed">{s.body}</p>
+                </div>
+              );
+            })}
+          </div>
         </section>
 
-        <section>
-          <div className="flex items-center justify-between mb-2 px-1">
-            <h2 className="label">Analyst Agents</h2>
-            <span className="label">
-              {signals.length} signals · last cycle
-            </span>
+        <section id="features" className="py-16 border-t border-border/60">
+          <div className="flex items-baseline justify-between mb-10">
+            <div>
+              <div className="label mb-2">Features</div>
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
+                What makes it different
+              </h2>
+            </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {(health?.agents ?? []).map((a) => (
-              <AgentPanel
-                key={a.name}
-                name={a.name}
-                description={a.description}
-                signals={signals}
-              />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {FEATURES.map((f, i) => (
+              <div key={i} className="card p-5 flex flex-col gap-2">
+                <h3 className="font-semibold text-sm text-text">{f.title}</h3>
+                <p className="text-xs text-muted leading-relaxed">{f.body}</p>
+              </div>
             ))}
           </div>
         </section>
 
-        <section>
-          <DecisionLog trades={trades} />
+        <section id="integrations" className="py-16 border-t border-border/60">
+          <div className="flex items-baseline justify-between mb-10">
+            <div>
+              <div className="label mb-2">Ecosystem</div>
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
+                Built on the SoSoValue stack
+              </h2>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            {INTEGRATIONS.map((it) => (
+              <div
+                key={it.name}
+                className="card px-4 py-5 flex flex-col items-center justify-center text-center gap-1"
+              >
+                <span className="font-semibold text-sm text-text">{it.name}</span>
+                <span className="text-[11px] text-muted mono">{it.tag}</span>
+              </div>
+            ))}
+          </div>
         </section>
 
-        <IntegrationsStrip />
+        <section id="roadmap" className="py-16 border-t border-border/60">
+          <div className="flex items-baseline justify-between mb-10">
+            <div>
+              <div className="label mb-2">Roadmap</div>
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
+                Multi-wave delivery
+              </h2>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {WAVES.map((w) => (
+              <div
+                key={w.label}
+                className={
+                  "card p-5 flex flex-col gap-3 " +
+                  (w.shipped
+                    ? "border-long/40 bg-long/5"
+                    : "opacity-90")
+                }
+              >
+                <div className="flex items-center gap-2">
+                  <span
+                    className={
+                      "pill " +
+                      (w.shipped
+                        ? "bg-long/15 text-long border border-long/30"
+                        : "bg-panel2 text-muted border border-border")
+                    }
+                  >
+                    {w.label}
+                  </span>
+                  {w.shipped && (
+                    <span className="text-[10px] text-long uppercase tracking-wider">
+                      shipped
+                    </span>
+                  )}
+                </div>
+                <h3 className="font-semibold text-sm">{w.title}</h3>
+                <p className="text-xs text-muted leading-relaxed">{w.body}</p>
+              </div>
+            ))}
+          </div>
+        </section>
 
-        <footer className="pt-4 pb-6 flex items-center justify-between text-[11px] text-muted border-t border-border/50">
-          <div className="flex items-center gap-2">
-            <span className="mono">SoSoFund · Wave 1</span>
+        <section className="py-20 border-t border-border/60 text-center flex flex-col items-center gap-5">
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight max-w-xl">
+            Turn SoSoValue signals into on-chain trades.
+          </h2>
+          <p className="text-muted max-w-lg text-sm leading-relaxed">
+            Open the app, run one cycle, and watch three agents deliberate into a
+            sized trade — on a paper ledger or directly on SoDEX testnet.
+          </p>
+          <Link
+            href="/dapp"
+            className="h-11 px-6 rounded-lg bg-gradient-to-b from-brand to-brand/80 hover:from-brand2 hover:to-brand text-white text-sm font-medium flex items-center gap-2 shadow-glow transition"
+          >
+            Launch App
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </section>
+
+        <footer className="py-8 border-t border-border/60 flex items-center justify-between text-[11px] text-muted">
+          <div className="flex items-center gap-2 mono">
+            <span>SoSoFund · Wave 1</span>
             <span className="opacity-40">·</span>
             <span>Built for the SoSoValue Buildathon</span>
           </div>
-          <div className="flex items-center gap-3 mono hidden md:flex">
+          <div className="hidden md:flex items-center gap-3 mono">
             <span>Research → Insight → Execution</span>
           </div>
         </footer>
-        </main>
-      </div>
+      </main>
     </div>
   );
 }
