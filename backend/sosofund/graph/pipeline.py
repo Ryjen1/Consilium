@@ -2,10 +2,16 @@
 
 Flow:
     parallel( ETFFlow, UnlockRisk, KOLNarrative )  →  RiskManager  →  PortfolioManager  →  Executor
+
+Executor is selectable via `mode`:
+    - "paper"         — write trades to SQLite only (default)
+    - "sodex_testnet" — place real orders on SoDEX testnet via EIP-712
+    - "sodex_mainnet" — same, against mainnet (guarded by explicit opt-in)
 """
 from __future__ import annotations
 
 import asyncio
+from typing import Literal
 
 import structlog
 from langgraph.graph import END, StateGraph
@@ -17,6 +23,8 @@ from .risk_manager import risk_manager
 from .state import FundState
 
 log = structlog.get_logger(__name__)
+
+ExecutionMode = Literal["paper", "sodex_testnet", "sodex_mainnet"]
 
 
 async def run_agents(state: FundState) -> FundState:
@@ -35,12 +43,21 @@ async def run_agents(state: FundState) -> FundState:
     return {**state, "signals": signals, "errors": errors}
 
 
-def build_graph():
+def _executor_for(mode: ExecutionMode):
+    if mode == "paper":
+        return paper_execute
+    # Import lazily so paper-mode runs don't pull eth-account etc unnecessarily
+    from ..sodex.executor import sodex_execute
+
+    return sodex_execute
+
+
+def build_graph(mode: ExecutionMode = "paper"):
     graph = StateGraph(FundState)
     graph.add_node("agents", run_agents)
     graph.add_node("risk", risk_manager)
     graph.add_node("portfolio", portfolio_manager)
-    graph.add_node("executor", paper_execute)
+    graph.add_node("executor", _executor_for(mode))
 
     graph.set_entry_point("agents")
     graph.add_edge("agents", "risk")
@@ -50,8 +67,12 @@ def build_graph():
     return graph.compile()
 
 
-async def run_cycle(universe: list[str] | None = None, portfolio_value_usd: float = 100_000) -> FundState:
-    app = build_graph()
+async def run_cycle(
+    universe: list[str] | None = None,
+    portfolio_value_usd: float = 100_000,
+    mode: ExecutionMode = "paper",
+) -> FundState:
+    app = build_graph(mode=mode)
     initial: FundState = {
         "universe": universe or ["BTC", "ETH", "SOL", "ARB", "OP"],
         "portfolio_value_usd": portfolio_value_usd,

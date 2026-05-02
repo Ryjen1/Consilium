@@ -20,6 +20,7 @@ router = APIRouter(prefix="/api")
 class RunRequest(BaseModel):
     universe: list[str] | None = None
     portfolio_value_usd: float = 100_000.0
+    mode: str = "paper"  # "paper" | "sodex_testnet" | "sodex_mainnet"
 
 
 class BacktestRequest(BaseModel):
@@ -48,9 +49,28 @@ async def health() -> dict:
 
 @router.post("/run")
 async def run(req: RunRequest) -> dict[str, Any]:
-    final = await run_cycle(universe=req.universe, portfolio_value_usd=req.portfolio_value_usd)
+    mode = req.mode if req.mode in ("paper", "sodex_testnet", "sodex_mainnet") else "paper"
+    s = get_settings()
+    # Guard rails: SoDEX modes require execution credentials.
+    if mode.startswith("sodex") and not s.sodex_execution_ready:
+        return {
+            "cycle_id": None,
+            "universe": req.universe,
+            "signals": [],
+            "sized_positions": {},
+            "trades": [],
+            "errors": [
+                "SoDEX execution requested but SODEX_EVM_PRIVATE_KEY / SODEX_EVM_ADDRESS not configured."
+            ],
+        }
+    final = await run_cycle(
+        universe=req.universe,
+        portfolio_value_usd=req.portfolio_value_usd,
+        mode=mode,  # type: ignore[arg-type]
+    )
     return {
         "cycle_id": final.get("cycle_id"),
+        "mode": mode,
         "universe": final.get("universe"),
         "signals": [s.model_dump(mode="json") for s in final.get("signals", [])],
         "sized_positions": final.get("sized_positions", {}),
