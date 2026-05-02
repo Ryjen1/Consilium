@@ -10,17 +10,8 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
-from ..client import get_client
+from ..client import get_client, symbol_to_id
 from .base import Agent, Signal
-
-# Minimal symbol -> currency_id map for demo. In prod this would use /currencies.
-_SYMBOL_TO_ID = {
-    "ARB": "arb",
-    "OP": "op",
-    "SOL": "sol",
-    "BTC": "btc",
-    "ETH": "eth",
-}
 
 
 class UnlockRiskAgent(Agent):
@@ -37,7 +28,7 @@ class UnlockRiskAgent(Agent):
         signals: list[Signal] = []
 
         for sym in universe:
-            cid = _SYMBOL_TO_ID.get(sym.upper())
+            cid = await symbol_to_id(sym, client)
             if not cid:
                 continue
             try:

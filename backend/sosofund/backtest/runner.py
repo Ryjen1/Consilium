@@ -14,19 +14,18 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from ..agents import AGENTS
-from ..client import get_client
+from ..client import get_client, symbol_to_id
 from ..graph.portfolio_manager import portfolio_manager
 from ..graph.risk_manager import risk_manager
 from ..graph.state import FundState
 
-_SYMBOL_TO_ID = {"BTC": "btc", "ETH": "eth", "SOL": "sol", "ARB": "arb", "OP": "op"}
-
 
 async def _price_series(symbol: str, limit: int = 60) -> list[tuple[int, float]]:
-    cid = _SYMBOL_TO_ID.get(symbol.upper())
+    client = get_client()
+    cid = await symbol_to_id(symbol, client)
     if not cid:
         return []
-    rows = await get_client().currency_klines(cid, limit=limit)
+    rows = await client.currency_klines(cid, limit=limit)
     return [(int(r["timestamp"]), float(r["close"])) for r in rows]
 
 
