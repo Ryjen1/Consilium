@@ -71,7 +71,7 @@ const WAVES = [
     q: "Wave 4",
     tag: "",
     title: "Marketplace on SSI",
-    body: "Users deposit into public SoSoFund strategies, auto-rebalanced through SoDEX.",
+    body: "Users deposit into public Consilium strategies, auto-rebalanced through SoDEX.",
     shipped: false,
   },
 ];
@@ -92,10 +92,10 @@ export default function Landing() {
         <div className="px-6 h-14 flex items-center gap-4 max-w-[1200px] mx-auto w-full">
           <Link href="/" className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-brand to-brand2 flex items-center justify-center text-white text-sm font-bold shadow-glow">
-              S
+              C
             </div>
             <div className="text-sm font-semibold tracking-tight">
-              SoSo<span className="text-brand">Fund</span>
+              Consi<span className="text-brand">lium</span>
             </div>
           </Link>
           <nav className="hidden md:flex items-center gap-1 ml-4">
@@ -131,15 +131,15 @@ export default function Landing() {
             SoSoValue Buildathon · Wave 1
           </span>
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight max-w-4xl leading-[1.02]">
-            Enable agentic investing for the <span className="text-brand">global masses</span>.
+            A <span className="text-brand">council of AI analysts</span> that trades on SoDEX.
           </h1>
           <p className="text-base md:text-lg text-muted max-w-2xl leading-relaxed">
-            SoSoFund is a crypto-native hedge fund run by specialized analyst
-            agents. It reads the market through{" "}
-            <span className="text-text">SoSoValue Terminal</span>, sizes
-            positions through a risk manager, and executes real EIP-712-signed
-            perps orders on <span className="text-text">SoDEX</span> — all in
-            one agent loop.
+            Consilium is an agentic hedge fund. Three specialized analysts
+            deliberate on{" "}
+            <span className="text-text">SoSoValue Terminal</span> signals, a
+            risk manager sizes positions, and a portfolio manager routes
+            EIP-712-signed perps orders to{" "}
+            <span className="text-text">SoDEX</span> — all in one agent loop.
           </p>
           <div className="flex items-center gap-3 pt-2">
             <Link
@@ -197,7 +197,7 @@ export default function Landing() {
           <div className="text-center mb-12">
             <div className="label mb-2">Features</div>
             <h2 className="text-2xl md:text-4xl font-bold tracking-tight">
-              What makes SoSoFund different
+              What makes Consilium different
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -274,8 +274,8 @@ export default function Landing() {
             Turn SoSoValue signals into on-chain trades.
           </h2>
           <p className="text-muted max-w-lg text-sm leading-relaxed">
-            Open the app, run one cycle, and watch three agents deliberate into
-            a sized trade — on a paper ledger or directly on SoDEX testnet.
+            Open Consilium, run one cycle, and watch three agents deliberate
+            into a sized trade — on a paper ledger or directly on SoDEX testnet.
           </p>
           <Link
             href="/dapp"
@@ -288,7 +288,7 @@ export default function Landing() {
 
         <footer className="py-8 border-t border-border/60 flex items-center justify-between text-[11px] text-muted">
           <div className="flex items-center gap-2 mono">
-            <span>SoSoFund · Wave 1</span>
+            <span>Consilium · Wave 1</span>
             <span className="opacity-40">·</span>
             <span>Built for the SoSoValue Buildathon</span>
           </div>

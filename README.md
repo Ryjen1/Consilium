@@ -1,9 +1,13 @@
-# SoSoFund — Crypto-Native AI Hedge Fund on SoSoValue
+# Consilium — A Council of AI Analysts Trading on SoSoValue + SoDEX
+
+> Crypto-native agentic hedge fund. Codebase / Python package still uses the
+> internal name `sosofund` for historical reasons; the product identity is
+> **Consilium**.
 
 > Research → Insight → Execution, in one agent loop.
 > Built for the **SoSoValue Buildathon** ($10k grant pool · AKINDO).
 
-SoSoFund is a multi-agent AI hedge fund that reads the crypto market through
+Consilium is a multi-agent AI hedge fund that reads the crypto market through
 the **SoSoValue Terminal API**, reasons about it with specialized analyst
 agents, and executes through **SoDEX** — SoSoValue's own on-chain DEX — with
 a paper-trading fallback for safe development.
@@ -139,7 +143,7 @@ The AKINDO Buildathon rewards continuous progress across waves. Our plan:
 | **1 — shipped** | 3 agents, LangGraph pipeline, SQLite ledger, FastAPI backend, Next.js dashboard, 30-day backtester on SoDEX klines, **EIP-712 signed perps execution on SoDEX testnet**, user-selectable paper / testnet modes. |
 | **2** | +4 agents (Macro, mNAV Treasury Discount, Liquidity-Depth, Sector Rotation). Limit orders + TP/SL + leverage management. User-configurable risk limits. |
 | **3** | ValueChain tx logging as the immutable audit trail for every decision. Strategy versioning, multi-strategy portfolios. |
-| **4** | Public strategy marketplace built on SSI — users can deposit into any public SoSoFund strategy, auto-rebalanced through SoDEX. |
+| **4** | Public strategy marketplace built on SSI — users can deposit into any public Consilium strategy, auto-rebalanced through SoDEX. |
 
 ## Tech stack
 

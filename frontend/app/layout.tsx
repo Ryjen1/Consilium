@@ -2,8 +2,8 @@ import "./globals.css";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "SoSoFund — AI Hedge Fund on SoSoValue",
-  description: "Crypto-native AI hedge fund. Research → insight → execution.",
+  title: "Consilium — A council of AI analysts that trades on SoDEX",
+  description: "Consilium is an agentic hedge fund built on SoSoValue and SoDEX. Research → insight → execution in one agent loop.",
 };
 
 export default function RootLayout({

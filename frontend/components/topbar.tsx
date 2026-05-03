@@ -36,13 +36,13 @@ export function Topbar({
       <div className="px-6 h-14 flex items-center gap-4">
         <div className="flex items-center gap-2.5 shrink-0">
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-brand to-brand2 flex items-center justify-center text-white text-sm font-bold shadow-glow">
-            S
+            C
           </div>
           <div className="text-sm font-semibold tracking-tight">
-            SoSo<span className="text-brand">Fund</span>
+            Consi<span className="text-brand">lium</span>
           </div>
           <div className="label hidden md:block ml-2 border-l border-border pl-3">
-            Agentic Hedge Fund · Wave 1
+            Council of AI Analysts · Wave 1
           </div>
         </div>
 

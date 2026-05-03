@@ -158,8 +158,8 @@ export default function Dashboard() {
         <section className="flex flex-col gap-3">
           <div className="flex items-baseline justify-between px-1">
             <h1 className="text-xl font-semibold tracking-tight">
-              Agentic hedge fund on{" "}
-              <span className="text-brand">SoSoValue</span> +{" "}
+              A council of analysts trading{" "}
+              <span className="text-brand">SoSoValue</span> signals onto{" "}
               <span className="text-brand">SoDEX</span>
             </h1>
             <span className="label hidden md:block">
@@ -218,7 +218,7 @@ export default function Dashboard() {
 
         <footer className="pt-4 pb-6 flex items-center justify-between text-[11px] text-muted border-t border-border/50">
           <div className="flex items-center gap-2">
-            <span className="mono">SoSoFund · Wave 1</span>
+            <span className="mono">Consilium · Wave 1</span>
             <span className="opacity-40">·</span>
             <span>Built for the SoSoValue Buildathon</span>
           </div>
