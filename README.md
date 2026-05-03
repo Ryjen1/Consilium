@@ -174,12 +174,6 @@ sosofund/
     └── components/                  AgentPanel · DecisionLog · PortfolioCard · PnLChart · ModeToggle
 ```
 
-## Credits
-
-Architecture inspired by `virattt/ai-hedge-fund` (multi-agent graph + risk
-manager + portfolio manager pattern), rebuilt from the ground up for
-**crypto-native** data and SoSoValue's ecosystem.
-
 ## License
 
 MIT
