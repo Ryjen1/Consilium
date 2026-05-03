@@ -47,6 +47,15 @@ export function Topbar({
         </div>
 
         <div className="ml-auto flex items-center gap-2">
+          <a
+            href="https://sosovalue.com"
+            target="_blank"
+            rel="noreferrer"
+            className="hidden lg:inline-flex h-9 px-3 rounded-lg border border-border hover:border-brand/40 text-xs text-muted hover:text-text items-center gap-1.5 transition"
+            title="Open SoSoValue Research Terminal"
+          >
+            Research Terminal ↗
+          </a>
           <div className="hidden sm:flex items-center gap-1.5">
             <span className={clsx("pill", sosoState.cls)}>{sosoState.label}</span>
             {health?.sodex && (

@@ -13,6 +13,7 @@ from ..client import get_client
 from ..config import get_settings
 from ..execution.ledger import Decision, LedgerTrade, get_session
 from ..graph import run_cycle
+from ..sodex import get_sodex_client
 
 router = APIRouter(prefix="/api")
 
@@ -150,6 +151,70 @@ async def run_backtest(req: BacktestRequest) -> dict:
     return await backtest(
         universe=req.universe, days=req.days, starting_capital=req.starting_capital
     )
+
+
+@router.get("/sodex/tickers")
+async def sodex_tickers() -> list[dict]:
+    """Live SoDEX perps tickers for the ticker strip on the landing/dapp.
+
+    Proxies through the backend so the frontend doesn't hit CORS on
+    testnet-gw.sodex.dev directly.
+    """
+    want = {"BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD", "AVAX-USD", "DOGE-USD"}
+    try:
+        rows = await get_sodex_client().perps_tickers()
+    except Exception:
+        return []
+    out: list[dict] = []
+    for r in rows:
+        sym = r.get("symbol")
+        if sym not in want:
+            continue
+        try:
+            out.append(
+                {
+                    "symbol": sym,
+                    "last_price": float(r.get("lastPx") or 0),
+                    "change_pct_24h": float(r.get("changePct") or 0),
+                    "mark_price": float(r.get("markPrice") or 0),
+                    "volume_24h": float(r.get("quoteVolume") or 0),
+                }
+            )
+        except (TypeError, ValueError):
+            continue
+    # Preserve want order
+    order = {s: i for i, s in enumerate(["BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD", "AVAX-USD", "DOGE-USD"])}
+    out.sort(key=lambda x: order.get(x["symbol"], 99))
+    return out
+
+
+@router.get("/markets")
+async def markets() -> list[dict]:
+    """Live market tickers via SoDEX perps (unsigned, high-quota)."""
+    from ..sodex import get_sodex_client
+
+    client = get_sodex_client()
+    symbols = ["BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD", "AVAX-USD", "DOGE-USD"]
+    out: list[dict] = []
+    for sym in symbols:
+        try:
+            rows = await client.perps_tickers(sym)
+            if not rows:
+                continue
+            t = rows[0]
+            last = float(t.get("lastPx") or 0)
+            change_pct = float(t.get("changePct") or 0) * 100
+            out.append(
+                {
+                    "symbol": sym.replace("-USD", ""),
+                    "full_symbol": sym,
+                    "price": last,
+                    "change_pct_24h": change_pct,
+                }
+            )
+        except Exception:
+            continue
+    return out
 
 
 @router.post("/reset")

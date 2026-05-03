@@ -73,6 +73,13 @@ aside {
   @apply border-t border-border/60;
 }
 
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  scrollbar-width: none;
+}
+
 /* Subtle moving grain texture for premium feel */
 .grain::before {
   content: "";
