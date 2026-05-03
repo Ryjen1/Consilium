@@ -17,7 +17,6 @@ import { PnLChart } from "@/components/pnl-chart";
 import { Topbar } from "@/components/topbar";
 import { Sidebar } from "@/components/sidebar";
 import { KpiStrip } from "@/components/kpi-strip";
-import { HeroPrompt } from "@/components/hero-prompt";
 import { Pipeline } from "@/components/pipeline";
 import { IntegrationsStrip } from "@/components/integrations-strip";
 
@@ -166,7 +165,6 @@ export default function Dashboard() {
               Wave 1 · shipped · buildathon submission
             </span>
           </div>
-          <HeroPrompt onRun={runCycle} running={runningCycle} />
         </section>
 
         <KpiStrip
