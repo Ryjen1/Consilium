@@ -203,13 +203,22 @@ async def markets() -> list[dict]:
                 continue
             t = rows[0]
             last = float(t.get("lastPx") or 0)
-            change_pct = float(t.get("changePct") or 0) * 100
+            # SoDEX returns changePct already as a percentage (0.59 = 0.59%),
+            # not as a ratio. No multiplication needed.
+            change_pct = float(t.get("changePct") or 0)
+            # Thin testnet books occasionally spit absurd 24h %s (a single
+            # whale order can move the book 500%+). Clamp for display sanity.
+            if change_pct > 100 or change_pct < -100:
+                change_pct = max(-100.0, min(100.0, change_pct))
             out.append(
                 {
                     "symbol": sym.replace("-USD", ""),
                     "full_symbol": sym,
                     "price": last,
                     "change_pct_24h": change_pct,
+                    "mark_price": float(t.get("markPrice") or 0),
+                    "bid": float(t.get("bidPx") or 0),
+                    "ask": float(t.get("askPx") or 0),
                 }
             )
         except Exception:
