@@ -131,15 +131,18 @@ export default function Landing() {
             SoSoValue Buildathon · Wave 1
           </span>
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight max-w-4xl leading-[1.02]">
-            A <span className="text-brand">council of AI analysts</span> that trades on SoDEX.
+            Three specialist agents.{" "}
+            <span className="text-brand">One aggregated trade.</span>
           </h1>
           <p className="text-base md:text-lg text-muted max-w-2xl leading-relaxed">
-            Consilium is an agentic hedge fund. Three specialized analysts
-            deliberate on{" "}
-            <span className="text-text">SoSoValue Terminal</span> signals, a
-            risk manager sizes positions, and a portfolio manager routes
-            EIP-712-signed perps orders to{" "}
-            <span className="text-text">SoDEX</span> — all in one agent loop.
+            The smartest traders don't follow one signal — they weigh many
+            against each other. Consilium does that automatically:{" "}
+            <span className="text-text">ETF Flow</span>,{" "}
+            <span className="text-text">Unlock Risk</span>, and{" "}
+            <span className="text-text">KOL Narrative</span> agents deliberate
+            on SoSoValue data, a risk manager arbitrates their disagreement,
+            and a portfolio manager emits one sized trade on SoDEX. Every
+            cycle. In three seconds.
           </p>
           <div className="flex items-center gap-3 pt-2">
             <Link

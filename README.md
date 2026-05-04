@@ -3,7 +3,11 @@
 </p>
 
 <p align="center">
-  <strong>A council of AI analysts that turns SoSoValue research into on-chain execution.</strong>
+  <strong>Three specialist agents. One aggregated trade. On SoDEX, every cycle.</strong>
+</p>
+
+<p align="center">
+  <sub>Opinion aggregation for on-chain trading · SoSoValue Buildathon Wave 1</sub>
 </p>
 
 <p align="center">
