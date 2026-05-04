@@ -162,7 +162,7 @@ export default function Dashboard() {
               <span className="text-brand">SoDEX</span>
             </h1>
             <span className="label hidden md:block">
-              Wave 1 · shipped · buildathon submission
+              SoSoValue Buildathon submission
             </span>
           </div>
         </section>
@@ -216,7 +216,7 @@ export default function Dashboard() {
 
         <footer className="pt-4 pb-6 flex items-center justify-between text-[11px] text-muted border-t border-border/50">
           <div className="flex items-center gap-2">
-            <span className="mono">Consilium · Wave 1</span>
+            <span className="mono">Consilium</span>
             <span className="opacity-40">·</span>
             <span>Built for the SoSoValue Buildathon</span>
           </div>

@@ -50,28 +50,28 @@ const WAVES = [
     q: "Wave 1",
     tag: "We are here",
     title: "Shipped",
-    body: "3 agents, LangGraph pipeline, paper and SoDEX testnet execution, dashboard, backtester.",
+    body: "3 agents, LangGraph pipeline, paper ledger, backtester, dashboard. EIP-712 signer and SoDEX testnet executor wired.",
     shipped: true,
   },
   {
     q: "Wave 2",
     tag: "",
-    title: "More agents, better orders",
-    body: "+4 agents. Limit orders, TP/SL, leverage, configurable risk.",
+    title: "Live execution + more agents",
+    body: "Activate live SoDEX testnet fills. Macro, BTC Treasury, Sector Rotation agents. Limit orders, TP/SL, leverage.",
     shipped: false,
   },
   {
     q: "Wave 3",
     tag: "",
-    title: "On-chain audit log",
-    body: "Every decision logged as a ValueChain tx. Strategy versioning.",
+    title: "On-chain audit + UX pass",
+    body: "Every decision logged as a ValueChain tx. Full UX refinement: motion, mobile, onboarding, accessibility.",
     shipped: false,
   },
   {
     q: "Wave 4",
     tag: "",
     title: "Marketplace on SSI",
-    body: "Users deposit into public Consilium strategies, auto-rebalanced through SoDEX.",
+    body: "LPs deposit into public Consilium strategies, auto-rebalanced through SoDEX.",
     shipped: false,
   },
 ];
@@ -126,23 +126,17 @@ export default function Landing() {
       </header>
 
       <main className="flex-1 max-w-[1200px] mx-auto w-full px-6">
-        <section className="pt-16 md:pt-24 pb-10 flex flex-col items-center text-center gap-6">
-          <span className="pill bg-brand/10 text-brand border border-brand/30">
-            SoSoValue Buildathon · Wave 1
-          </span>
+        <section className="pt-20 md:pt-28 pb-12 flex flex-col items-center text-center gap-7">
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight max-w-4xl leading-[1.02]">
             Three specialist agents.{" "}
             <span className="text-brand">One aggregated trade.</span>
           </h1>
           <p className="text-base md:text-lg text-muted max-w-2xl leading-relaxed">
-            The smartest traders don't follow one signal — they weigh many
-            against each other. Consilium does that automatically:{" "}
             <span className="text-text">ETF Flow</span>,{" "}
             <span className="text-text">Unlock Risk</span>, and{" "}
-            <span className="text-text">KOL Narrative</span> agents deliberate
-            on SoSoValue data, a risk manager arbitrates their disagreement,
-            and a portfolio manager emits one sized trade on SoDEX. Every
-            cycle. In three seconds.
+            <span className="text-text">KOL Narrative</span> agents debate
+            SoSoValue data. A risk manager arbitrates. A portfolio manager
+            emits one sized trade on SoDEX. Every cycle. In three seconds.
           </p>
           <div className="flex items-center gap-3 pt-2">
             <Link
@@ -291,7 +285,7 @@ export default function Landing() {
 
         <footer className="py-8 border-t border-border/60 flex items-center justify-between text-[11px] text-muted">
           <div className="flex items-center gap-2 mono">
-            <span>Consilium · Wave 1</span>
+            <span>Consilium</span>
             <span className="opacity-40">·</span>
             <span>Built for the SoSoValue Buildathon</span>
           </div>

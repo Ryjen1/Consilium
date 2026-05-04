@@ -42,7 +42,7 @@ export function Topbar({
             Consi<span className="text-brand">lium</span>
           </div>
           <div className="label hidden md:block ml-2 border-l border-border pl-3">
-            Council of AI Analysts · Wave 1
+            Council of AI Analysts
           </div>
         </div>
 
