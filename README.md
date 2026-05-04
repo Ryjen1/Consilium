@@ -1,8 +1,16 @@
-# Consilium — A Council of AI Analysts Trading on SoSoValue + SoDEX
+<p align="center">
+  <img src="assets/logo-wordmark.svg" width="320" alt="Consilium" />
+</p>
 
-> Crypto-native agentic hedge fund. Codebase / Python package still uses the
-> internal name `sosofund` for historical reasons; the product identity is
-> **Consilium**.
+<p align="center">
+  <strong>A council of AI analysts that turns SoSoValue research into on-chain execution.</strong>
+</p>
+
+<p align="center">
+  <sub>Codebase / Python package still uses the internal name <code>sosofund</code>; the product identity is <strong>Consilium</strong>.</sub>
+</p>
+
+---
 
 > Research → Insight → Execution, in one agent loop.
 > Built for the **SoSoValue Buildathon** ($10k grant pool · AKINDO).

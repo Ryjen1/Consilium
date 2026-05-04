@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!-- Large banner / social-share version (2x1 feel on square canvas).
+       Use this for the AKINDO submission image, OG image, or YouTube thumbnail. -->
+  <defs>
+    <radialGradient id="bg" cx="30%" cy="20%" r="80%">
+      <stop offset="0%" stop-color="#1a0f3d"/>
+      <stop offset="100%" stop-color="#050711"/>
+    </radialGradient>
+    <linearGradient id="grad3" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#a48bff"/>
+      <stop offset="100%" stop-color="#6b4eff"/>
+    </linearGradient>
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Dark background -->
+  <rect width="512" height="512" fill="url(#bg)"/>
+
+  <!-- Large logo mark centered -->
+  <g transform="translate(176 136)">
+    <rect width="160" height="160" rx="38" fill="url(#grad3)" filter="url(#softGlow)"/>
+    <g stroke="white" stroke-width="4" stroke-linecap="round" opacity="0.55">
+      <line x1="52" y1="54" x2="80" y2="90"/>
+      <line x1="108" y1="54" x2="80" y2="90"/>
+      <line x1="80" y1="122" x2="80" y2="90"/>
+    </g>
+    <g fill="white">
+      <circle cx="52" cy="54" r="8"/>
+      <circle cx="108" cy="54" r="8"/>
+      <circle cx="80" cy="122" r="8"/>
+    </g>
+    <circle cx="80" cy="90" r="12" fill="white"/>
+    <circle cx="80" cy="90" r="5.5" fill="#6b4eff"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="256" y="360"
+        font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif"
+        font-size="64" font-weight="700" letter-spacing="-1" fill="#e5e7eb"
+        text-anchor="middle">
+    Consilium
+  </text>
+
+  <!-- Tagline -->
+  <text x="256" y="400"
+        font-family="ui-monospace, 'SFMono-Regular', Menlo, monospace"
+        font-size="16" letter-spacing="4" fill="#7a8398"
+        text-anchor="middle">
+    A COUNCIL OF AI ANALYSTS
+  </text>
+</svg>
