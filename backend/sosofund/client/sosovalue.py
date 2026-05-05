@@ -34,12 +34,14 @@ log = structlog.get_logger(__name__)
 class _RateLimiter:
     """Process-wide rate limiter.
 
-    SoSoValue's documented limit is 20 req/min per key (3s spacing).
-    We stay safely under it at 3.2s to leave headroom for burst overlap
-    between sequential awaits.
+    SoSoValue demo-plan (as of May 2026): 10 req/min per key (6s spacing)
+    and 10,000 calls/month. We stay safely under the per-minute cap at
+    6.5s intervals to leave headroom for burst overlap between sequential
+    awaits. Heavy cache TTLs elsewhere in this file keep the monthly
+    count comfortably under 10k.
     """
 
-    def __init__(self, min_interval_s: float = 3.2) -> None:
+    def __init__(self, min_interval_s: float = 6.5) -> None:
         self.min_interval = min_interval_s
         self._last = 0.0
         self._lock = asyncio.Lock()
