@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="none">
+  <!-- 0xdev avatar: stylised female silhouette portrait on a purple disc.
+       Minimalist geometric art, designed to read cleanly at 40x40 thumb. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#2d1b6b"/>
+      <stop offset="55%" stop-color="#6b4eff"/>
+      <stop offset="100%" stop-color="#a48bff"/>
+    </linearGradient>
+    <radialGradient id="highlight" cx="30%" cy="22%" r="70%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="hair" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a0f3d"/>
+      <stop offset="100%" stop-color="#3b2580"/>
+    </linearGradient>
+    <linearGradient id="skin" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f2d7c4"/>
+      <stop offset="100%" stop-color="#e4b99f"/>
+    </linearGradient>
+    <linearGradient id="shirt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1a1a2e"/>
+      <stop offset="100%" stop-color="#0f0f1e"/>
+    </linearGradient>
+    <clipPath id="discClip">
+      <circle cx="128" cy="128" r="124"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background disc -->
+  <circle cx="128" cy="128" r="124" fill="url(#bg)"/>
+  <circle cx="128" cy="128" r="124" fill="url(#highlight)"/>
+
+  <!-- All portrait elements clipped to the disc so nothing overflows -->
+  <g clip-path="url(#discClip)">
+    <!-- Shoulders / shirt -->
+    <ellipse cx="128" cy="240" rx="110" ry="60" fill="url(#shirt)"/>
+
+    <!-- Neck -->
+    <rect x="114" y="168" width="28" height="30" fill="url(#skin)"/>
+
+    <!-- Hair back layer (behind face, flows past shoulders) -->
+    <path d="M 58 150
+             Q 52 90 90 62
+             Q 128 38 166 62
+             Q 204 90 198 150
+             L 208 220
+             Q 168 196 128 196
+             Q 88 196 48 220 Z"
+          fill="url(#hair)"/>
+
+    <!-- Face oval -->
+    <ellipse cx="128" cy="128" rx="46" ry="56" fill="url(#skin)"/>
+
+    <!-- Hair front (fringe + crown on top of the face) -->
+    <path d="M 82 108
+             Q 80 70 120 58
+             Q 160 56 174 90
+             Q 178 116 168 118
+             Q 160 96 144 92
+             Q 136 108 118 108
+             Q 100 108 90 118
+             Q 84 118 82 108 Z"
+          fill="url(#hair)"/>
+
+    <!-- A soft side-sweep strand over the forehead for femininity cue -->
+    <path d="M 96 108
+             Q 106 118 128 112
+             Q 146 108 160 116"
+          stroke="#2a1860" stroke-width="3" stroke-linecap="round"
+          fill="none" opacity="0.6"/>
+
+    <!-- Left eye (closed / sleek line, minimalist style) -->
+    <path d="M 102 136 Q 110 132 118 136"
+          stroke="#1a0f3d" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <!-- Right eye -->
+    <path d="M 138 136 Q 146 132 154 136"
+          stroke="#1a0f3d" stroke-width="3" stroke-linecap="round" fill="none"/>
+
+    <!-- Subtle blush -->
+    <circle cx="106" cy="152" r="5" fill="#f0a590" opacity="0.35"/>
+    <circle cx="150" cy="152" r="5" fill="#f0a590" opacity="0.35"/>
+
+    <!-- Lips -->
+    <path d="M 120 162 Q 128 167 136 162"
+          stroke="#a04060" stroke-width="3" stroke-linecap="round" fill="none"/>
+
+    <!-- Earring hint on the right -->
+    <circle cx="176" cy="140" r="3" fill="#ffd8f0" opacity="0.8"/>
+
+    <!-- Small Consilium-aligned accent: a tiny three-node motif
+         on the shirt collar corner so the avatar echoes the product mark -->
+    <g opacity="0.85" transform="translate(168 212)">
+      <line x1="0" y1="0" x2="-10" y2="-6" stroke="white" stroke-width="1.2"
+            stroke-linecap="round" opacity="0.6"/>
+      <line x1="0" y1="0" x2="10" y2="-6" stroke="white" stroke-width="1.2"
+            stroke-linecap="round" opacity="0.6"/>
+      <line x1="0" y1="0" x2="0" y2="10" stroke="white" stroke-width="1.2"
+            stroke-linecap="round" opacity="0.6"/>
+      <circle cx="-10" cy="-6" r="2" fill="white"/>
+      <circle cx="10" cy="-6" r="2" fill="white"/>
+      <circle cx="0" cy="10" r="2" fill="white"/>
+      <circle cx="0" cy="0" r="2.8" fill="white"/>
+    </g>
+  </g>
+
+  <!-- Outer ring for edge definition at small sizes -->
+  <circle cx="128" cy="128" r="123" fill="none"
+          stroke="white" stroke-opacity="0.1" stroke-width="1"/>
+</svg>
