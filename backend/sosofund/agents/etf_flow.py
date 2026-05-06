@@ -24,13 +24,21 @@ class ETFFlowAgent(Agent):
         client = get_client()
         signals: list[Signal] = []
         for sym in {"BTC", "ETH"} & set(u.upper() for u in universe):
-            rows = await client.etf_summary_history(symbol=sym, country_code="US", limit=7)
+            try:
+                rows = await client.etf_summary_history(symbol=sym, country_code="US", limit=7)
+            except Exception:
+                continue
+            if not isinstance(rows, list) or not rows:
+                continue
             # API returns reverse-chrono; take the 3 most recent
-            recent = rows[:3]
+            recent = [r for r in rows[:3] if isinstance(r, dict)]
             if not recent:
                 continue
-            cum_3d = sum(float(r["total_net_inflow"]) for r in recent)
-            total_assets = float(recent[0].get("total_net_assets", 0))
+            try:
+                cum_3d = sum(float(r.get("total_net_inflow") or 0) for r in recent)
+                total_assets = float(recent[0].get("total_net_assets") or 0)
+            except (TypeError, ValueError):
+                continue
 
             if cum_3d >= self.LONG_THRESHOLD:
                 direction = "long"

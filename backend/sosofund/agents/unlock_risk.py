@@ -36,19 +36,41 @@ class UnlockRiskAgent(Agent):
             except Exception:
                 continue
 
-            circ = float(econ.get("token_unlock", {}).get("circulating_supply") or 0)
+            # SoSoValue returns `null` (not {}) for tokens with no unlock data.
+            # Guard every nested access against None before .get().
+            if not isinstance(econ, dict):
+                continue
+
+            token_unlock = econ.get("token_unlock") or {}
+            try:
+                circ = float(token_unlock.get("circulating_supply") or 0)
+            except (TypeError, ValueError):
+                continue
             if circ <= 0:
                 continue
 
             imminent_unlock = 0.0
             labels: list[str] = []
-            for row in econ.get("unlock_timeline") or []:
-                ts = int(row.get("timestamp", 0))
+            timeline = econ.get("unlock_timeline") or []
+            for row in timeline:
+                if not isinstance(row, dict):
+                    continue
+                try:
+                    ts = int(row.get("timestamp") or 0)
+                except (TypeError, ValueError):
+                    continue
+                if ts <= 0:
+                    continue
                 when = datetime.fromtimestamp(ts / 1000, tz=timezone.utc)
                 if now <= when <= horizon:
-                    for v in row.get("vestings", []):
-                        imminent_unlock += float(v.get("amount", 0))
-                        labels.append(str(v.get("label", "")))
+                    for v in row.get("vestings") or []:
+                        if not isinstance(v, dict):
+                            continue
+                        try:
+                            imminent_unlock += float(v.get("amount") or 0)
+                        except (TypeError, ValueError):
+                            continue
+                        labels.append(str(v.get("label") or ""))
 
             if imminent_unlock <= 0:
                 continue
