@@ -134,7 +134,9 @@ export default function Landing() {
             <span className="text-brand">One sized trade.</span>
           </h1>
           <p className="text-base md:text-lg text-muted max-w-2xl leading-relaxed">
-            Live SoSoValue data. Paper ledger today. SoDEX testnet in Wave 2.
+            Consilium runs a council of agents over live SoSoValue data and
+            lets a risk manager size each position. Paper ledger today.
+            EIP-712-signed SoDEX testnet execution in Wave 2.
           </p>
           <div className="flex items-center gap-3 pt-1 flex-wrap justify-center">
             <a
