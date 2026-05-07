@@ -2,6 +2,8 @@ import Link from "next/link";
 import { ArrowRight, Brain, Network, Shield, Zap } from "lucide-react";
 import { MarketTicker } from "@/components/market-ticker";
 import { SeamlessSplit } from "@/components/seamless-split";
+import { HeroDemo } from "@/components/hero-demo";
+import { ProofRow } from "@/components/proof-row";
 
 const STEPS = [
   {
@@ -48,7 +50,7 @@ const FEATURES = [
 const WAVES = [
   {
     q: "Wave 1",
-    tag: "We are here",
+    tag: "Today",
     title: "Shipped",
     body: "3 agents, LangGraph pipeline, paper ledger, backtester, dashboard. EIP-712 signer and SoDEX testnet executor wired.",
     shipped: true,
@@ -99,8 +101,8 @@ export default function Landing() {
             </div>
           </Link>
           <nav className="hidden md:flex items-center gap-1 ml-4">
+            <a href="#try" className="px-3 h-8 rounded-md text-[12px] text-muted hover:text-text flex items-center transition">Try it</a>
             <a href="#how" className="px-3 h-8 rounded-md text-[12px] text-muted hover:text-text flex items-center transition">How it works</a>
-            <a href="#seamless" className="px-3 h-8 rounded-md text-[12px] text-muted hover:text-text flex items-center transition">Experience</a>
             <a href="#features" className="px-3 h-8 rounded-md text-[12px] text-muted hover:text-text flex items-center transition">Features</a>
             <a href="#roadmap" className="px-3 h-8 rounded-md text-[12px] text-muted hover:text-text flex items-center transition">Roadmap</a>
           </nav>
@@ -118,7 +120,7 @@ export default function Landing() {
               href="/dapp"
               className="h-9 px-4 rounded-lg bg-gradient-to-b from-brand to-brand/80 hover:from-brand2 hover:to-brand text-white text-sm font-medium flex items-center gap-1.5 shadow-glow transition"
             >
-              Launch App
+              Open app
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
@@ -126,33 +128,58 @@ export default function Landing() {
       </header>
 
       <main className="flex-1 max-w-[1200px] mx-auto w-full px-6">
-        <section className="pt-20 md:pt-28 pb-12 flex flex-col items-center text-center gap-7">
-          <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight max-w-4xl leading-[1.02]">
-            Three specialist agents.{" "}
-            <span className="text-brand">One aggregated trade.</span>
+        {/* Hero: outcome-first copy + single primary CTA that scrolls to a working demo. */}
+        <section className="pt-16 md:pt-24 pb-10 flex flex-col items-center text-center gap-6">
+          <div className="pill bg-brand/10 text-brand border border-brand/30">
+            SoSoValue Buildathon · Wave 1 live
+          </div>
+          <h1 className="display text-4xl md:text-6xl lg:text-7xl max-w-4xl">
+            Three AI analysts.{" "}
+            <span className="text-brand">One sized trade.</span>
+            <br className="hidden md:block" /> Every three seconds.
           </h1>
           <p className="text-base md:text-lg text-muted max-w-2xl leading-relaxed">
-            <span className="text-text">ETF Flow</span>,{" "}
-            <span className="text-text">Unlock Risk</span>, and{" "}
-            <span className="text-text">KOL Narrative</span> agents debate
-            SoSoValue data. A risk manager arbitrates. A portfolio manager
-            emits one sized trade on SoDEX. Every cycle. In three seconds.
+            Consilium runs a council of agents over live SoSoValue data, lets a
+            risk manager size each position, and posts an EIP-712-signed order
+            to SoDEX. Paper by default. Mainnet when you flip a switch.
           </p>
-          <div className="flex items-center gap-3 pt-2">
+          <div className="flex items-center gap-3 pt-1 flex-wrap justify-center">
+            <a
+              href="#try"
+              className="h-11 px-6 rounded-lg bg-gradient-to-b from-brand to-brand/80 hover:from-brand2 hover:to-brand text-white text-sm font-semibold flex items-center gap-2 shadow-glow transition"
+            >
+              Run a demo cycle
+              <ArrowRight className="w-4 h-4" />
+            </a>
             <Link
               href="/dapp"
-              className="h-11 px-6 rounded-lg bg-gradient-to-b from-brand to-brand/80 hover:from-brand2 hover:to-brand text-white text-sm font-medium flex items-center gap-2 shadow-glow transition"
+              className="h-11 px-5 rounded-lg border border-border hover:border-brand text-text text-sm font-medium flex items-center gap-2 transition"
             >
-              Launch App
-              <ArrowRight className="w-4 h-4" />
+              Open the full app
             </Link>
             <a
               href="#how"
-              className="h-11 px-6 rounded-lg border border-border hover:border-brand text-text text-sm font-medium flex items-center gap-2 transition"
+              className="h-11 px-2 text-muted hover:text-text text-sm flex items-center transition"
             >
-              How it works
+              How it works →
             </a>
           </div>
+        </section>
+
+        {/* Live proof row, derived from /api/health — no fabricated numbers. */}
+        <section className="pb-12">
+          <ProofRow />
+        </section>
+
+        {/* Interactive demo. First click produces a real result. */}
+        <section id="try" className="pb-16 scroll-mt-20">
+          <div className="text-center mb-6">
+            <div className="label mb-2">Try it</div>
+            <h2 className="display text-2xl md:text-3xl">
+              One click. Three agents. A sized signal.
+            </h2>
+          </div>
+          <HeroDemo />
         </section>
 
         <section className="pb-16">
@@ -163,10 +190,10 @@ export default function Landing() {
           <SeamlessSplit />
         </section>
 
-        <section id="how" className="py-16 border-t border-border/60">
+        <section id="how" className="py-16 border-t border-border/60 scroll-mt-20">
           <div className="text-center mb-12">
             <div className="label mb-2">How it works</div>
-            <h2 className="text-2xl md:text-4xl font-bold tracking-tight">
+            <h2 className="display text-2xl md:text-4xl">
               Research → Insight → Execution
             </h2>
             <p className="text-sm text-muted mt-3">Closes in roughly three seconds.</p>
@@ -190,10 +217,10 @@ export default function Landing() {
           </div>
         </section>
 
-        <section id="features" className="py-16 border-t border-border/60">
+        <section id="features" className="py-16 border-t border-border/60 scroll-mt-20">
           <div className="text-center mb-12">
             <div className="label mb-2">Features</div>
-            <h2 className="text-2xl md:text-4xl font-bold tracking-tight">
+            <h2 className="display text-2xl md:text-4xl">
               What makes Consilium different
             </h2>
           </div>
@@ -207,10 +234,10 @@ export default function Landing() {
           </div>
         </section>
 
-        <section id="roadmap" className="py-16 border-t border-border/60">
+        <section id="roadmap" className="py-16 border-t border-border/60 scroll-mt-20">
           <div className="text-center mb-12">
             <div className="label mb-2">Roadmap</div>
-            <h2 className="text-2xl md:text-4xl font-bold tracking-tight">
+            <h2 className="display text-2xl md:text-4xl">
               Multi-wave delivery
             </h2>
           </div>
@@ -224,7 +251,7 @@ export default function Landing() {
                       className={
                         "w-3 h-3 rounded-full border-2 " +
                         (w.shipped
-                          ? "bg-long border-long"
+                          ? "bg-long border-long shadow-[0_0_10px_rgba(34,197,94,0.6)]"
                           : "bg-panel border-border")
                       }
                     />
@@ -267,7 +294,7 @@ export default function Landing() {
         </section>
 
         <section className="py-20 text-center flex flex-col items-center gap-5">
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tight max-w-2xl leading-tight">
+          <h2 className="display text-3xl md:text-5xl max-w-2xl">
             Turn SoSoValue signals into on-chain trades.
           </h2>
           <p className="text-muted max-w-lg text-sm leading-relaxed">
@@ -276,9 +303,9 @@ export default function Landing() {
           </p>
           <Link
             href="/dapp"
-            className="h-11 px-6 rounded-lg bg-gradient-to-b from-brand to-brand/80 hover:from-brand2 hover:to-brand text-white text-sm font-medium flex items-center gap-2 shadow-glow transition mt-2"
+            className="h-11 px-6 rounded-lg bg-gradient-to-b from-brand to-brand/80 hover:from-brand2 hover:to-brand text-white text-sm font-semibold flex items-center gap-2 shadow-glow transition mt-2"
           >
-            Launch App
+            Open the app
             <ArrowRight className="w-4 h-4" />
           </Link>
         </section>

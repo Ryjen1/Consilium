@@ -19,9 +19,14 @@ function fmtPrice(n: number): string {
   return `$${n.toFixed(5)}`;
 }
 
+// Last-known universe, shown when the backend is unreachable so the ticker
+// never shows a dead "Start the backend" message on cold deploys.
+const OFFLINE_UNIVERSE = ["BTC", "ETH", "SOL", "ARB", "OP"];
+
 export function MarketTicker() {
   const [markets, setMarkets] = useState<Market[]>([]);
   const [loading, setLoading] = useState(true);
+  const [offline, setOffline] = useState(false);
   const [flashes, setFlashes] = useState<Record<string, Flash>>({});
   const prevPrices = useRef<Record<string, number>>({});
   const flashTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
@@ -33,6 +38,7 @@ export function MarketTicker() {
       try {
         const m = await api<Market[]>("/api/markets");
         if (cancelled) return;
+        setOffline(false);
 
         // Detect price changes and trigger flashes.
         const nextFlashes: Record<string, Flash> = {};
@@ -55,7 +61,10 @@ export function MarketTicker() {
         }
         setLoading(false);
       } catch {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setOffline(true);
+          setLoading(false);
+        }
       }
     };
 
@@ -73,18 +82,30 @@ export function MarketTicker() {
   return (
     <div className="card px-4 py-3 flex items-center gap-4 overflow-x-auto">
       <div className="flex items-center gap-1.5 shrink-0">
-        <span className="w-1.5 h-1.5 rounded-full bg-long animate-pulse" />
-        <span className="label">Live · SoDEX Testnet</span>
+        <span
+          className={clsx(
+            "w-1.5 h-1.5 rounded-full",
+            offline ? "bg-warn" : "bg-long animate-pulse"
+          )}
+        />
+        <span className="label">
+          {offline ? "Reconnecting · SoDEX Testnet" : "Live · SoDEX Testnet"}
+        </span>
       </div>
 
       <div className="flex items-center gap-6">
         {loading && markets.length === 0 && (
           <span className="text-xs text-muted">Loading markets…</span>
         )}
-        {!loading && markets.length === 0 && (
-          <span className="text-xs text-muted">
-            Start the backend to see live prices.
-          </span>
+        {!loading && offline && markets.length === 0 && (
+          <div className="flex items-center gap-4">
+            {OFFLINE_UNIVERSE.map((s) => (
+              <div key={s} className="flex items-center gap-2 opacity-50">
+                <span className="mono font-semibold text-sm text-text">{s}</span>
+                <span className="mono text-sm text-muted">—</span>
+              </div>
+            ))}
+          </div>
         )}
         {markets.map((m) => {
           const up = m.change_pct_24h >= 0;
