@@ -15,31 +15,32 @@ type DemoResult = {
   source: "live" | "fallback";
 };
 
-// Used when the backend is offline so the demo never shows a dead end.
-// These are *example* outputs — the UI tags them clearly as `EXAMPLE`.
+// Placeholder rendered only when the backend is unreachable so the demo
+// never shows a dead end. Clearly labeled as "EXAMPLE" in the UI; numbers
+// are generic and illustrative, not actual SoSoValue data.
 const FALLBACK: Record<Symbol, DemoResult> = {
   BTC: {
     symbol: "BTC",
     direction: "long",
-    confidence: 0.62,
+    confidence: 0.6,
     rationale:
-      "ETF Flow agent: net +$412M into spot BTC ETFs over 5d. Unlock Risk: no material unlocks in 30d window. KOL Narrative: neutral-to-positive.",
+      "Placeholder — when live, the ETF Flow, Unlock Risk, and KOL Narrative agents each analyze their own SoSoValue primitive for BTC and a risk manager arbitrates the combined signal.",
     source: "fallback",
   },
   ETH: {
     symbol: "ETH",
     direction: "flat",
-    confidence: 0.48,
+    confidence: 0.5,
     rationale:
-      "ETF Flow agent: outflows tapering but still negative. Unlock Risk: low. KOL Narrative: mixed — cancels the flow signal. Risk manager flattens.",
+      "Placeholder — when live, opposing signals across the three agents would net to a flat position here, cancelled by the risk manager.",
     source: "fallback",
   },
   SOL: {
     symbol: "SOL",
     direction: "long",
-    confidence: 0.71,
+    confidence: 0.6,
     rationale:
-      "KOL Narrative agent: momentum score top-quartile. Unlock Risk: minor cliff cleared last week. ETF Flow: n/a. Weighted consensus: long.",
+      "Placeholder — when live, each agent contributes its own thesis (flows, unlocks, KOL activity) and the risk manager produces a single sized signal.",
     source: "fallback",
   },
 };
@@ -150,7 +151,7 @@ export function HeroDemo() {
           ) : (
             <Play className="w-4 h-4 fill-white" />
           )}
-          Run demo cycle
+          Try Free — Paper Trading
         </button>
       </div>
 
@@ -207,9 +208,11 @@ export function HeroDemo() {
               {result.rationale}
             </p>
             {result.source === "fallback" && (
-              <p className="text-[11px] text-muted">
-                Backend is offline right now — this is a recorded example cycle.
-                Open the app to run it against live data.
+              <p className="text-[11px] text-warn bg-warn/10 border border-warn/30 rounded-md px-2 py-1.5">
+                <span className="font-semibold">EXAMPLE output.</span> The
+                backend is unreachable right now, so this is a placeholder
+                cycle — not real SoSoValue data. Open the dapp or retry to
+                run live.
               </p>
             )}
           </>

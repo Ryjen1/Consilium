@@ -14,7 +14,7 @@ const STEPS = [
   {
     icon: Shield,
     title: "Risk manager sizes positions",
-    body: "Multi-agent signals are aggregated, opposing directions cancel, and every position is capped at 10% of book.",
+    body: "Multi-agent signals are aggregated, opposing directions cancel, and every position is capped at 5% of book.",
   },
   {
     icon: Network,
@@ -23,8 +23,8 @@ const STEPS = [
   },
   {
     icon: Zap,
-    title: "SoDEX executes on-chain",
-    body: "EIP-712-signed perps orders post to SoDEX testnet in one round-trip. Every decision is audited.",
+    title: "SoDEX-ready executor",
+    body: "EIP-712 signer and perps executor wired end-to-end. Testnet fills activate in Wave 2 once a funded wallet is attached.",
   },
 ];
 
@@ -34,8 +34,8 @@ const FEATURES = [
     body: "8 Terminal endpoints in active use, the full 32-endpoint surface catalogued in the client.",
   },
   {
-    title: "Real on-chain execution",
-    body: "EIP-712 signer and SoDEX perps executor. Real testnet orders, real fills.",
+    title: "On-chain execution path",
+    body: "EIP-712 signer and SoDEX perps executor wired end-to-end. Wave 2 funds a wallet and activates live testnet fills.",
   },
   {
     title: "Research-to-execution loop",
@@ -139,16 +139,16 @@ export default function Landing() {
             <br className="hidden md:block" /> Every three seconds.
           </h1>
           <p className="text-base md:text-lg text-muted max-w-2xl leading-relaxed">
-            Consilium runs a council of agents over live SoSoValue data, lets a
-            risk manager size each position, and posts an EIP-712-signed order
-            to SoDEX. Paper by default. Mainnet when you flip a switch.
+            Consilium runs a council of agents over live SoSoValue data and
+            lets a risk manager size each position. Paper ledger today.
+            EIP-712-signed SoDEX testnet execution in Wave 2.
           </p>
           <div className="flex items-center gap-3 pt-1 flex-wrap justify-center">
             <a
               href="#try"
               className="h-11 px-6 rounded-lg bg-gradient-to-b from-brand to-brand/80 hover:from-brand2 hover:to-brand text-white text-sm font-semibold flex items-center gap-2 shadow-glow transition"
             >
-              Run a demo cycle
+              Try Free — Paper Trading
               <ArrowRight className="w-4 h-4" />
             </a>
             <Link
@@ -280,7 +280,7 @@ export default function Landing() {
         </section>
 
         <section className="py-16 border-t border-border/60">
-          <div className="label text-center mb-6">Built on</div>
+          <div className="label text-center mb-6">Integrates with</div>
           <div className="flex flex-wrap items-center justify-center gap-3">
             {PARTNERS.map((p) => (
               <div

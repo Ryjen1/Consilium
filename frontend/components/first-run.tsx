@@ -10,17 +10,17 @@ const PREVIEW_STEPS = [
   {
     icon: Shield,
     label: "RISK",
-    body: "Opposing signals cancel. Each position capped at 10% of book.",
+    body: "Opposing signals cancel. Each position capped at 5% of book; consensus from multiple agents scales the size up.",
   },
   {
     icon: Network,
     label: "PORTFOLIO",
-    body: "Sized targets become orders against a paper ledger.",
+    body: "Sized targets become orders against a paper ledger sized to your chosen book.",
   },
   {
     icon: Zap,
     label: "LEDGER",
-    body: "Fills recorded. PnL, trades, and decisions appear in the dashboard.",
+    body: "Trades, positions, and agent reasoning persist in the dashboard and are fully auditable.",
   },
 ];
 
