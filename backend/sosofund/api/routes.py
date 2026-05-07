@@ -1,6 +1,7 @@
 """HTTP routes consumed by the Next.js frontend."""
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import APIRouter
@@ -16,6 +17,21 @@ from ..graph import run_cycle
 from ..sodex import get_sodex_client
 
 router = APIRouter(prefix="/api")
+
+
+def _iso_utc(dt: datetime | None) -> str | None:
+    """Serialize a datetime as a timezone-aware ISO-8601 string.
+
+    SQLite strips timezone info on round-trip, so timestamps come back as
+    naive datetimes even though we wrote them as UTC. We re-attach UTC on
+    the way out so JavaScript's `new Date(...)` parses them correctly
+    instead of treating them as local time.
+    """
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.isoformat()
 
 
 class RunRequest(BaseModel):
@@ -97,7 +113,7 @@ async def decisions(limit: int = 50) -> list[dict]:
                 "confidence": r.confidence,
                 "reasoning": r.reasoning,
                 "evidence": r.evidence,
-                "generated_at": r.generated_at.isoformat(),
+                "generated_at": _iso_utc(r.generated_at),
             }
             for r in rows
         ]
@@ -120,7 +136,7 @@ async def trades(limit: int = 50) -> list[dict]:
                 "confidence": r.confidence,
                 "rationale": r.rationale,
                 "agents": r.agents,
-                "executed_at": r.executed_at.isoformat(),
+                "executed_at": _iso_utc(r.executed_at),
             }
             for r in rows
         ]
