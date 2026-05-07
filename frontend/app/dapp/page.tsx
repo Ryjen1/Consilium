@@ -19,6 +19,7 @@ import { Sidebar } from "@/components/sidebar";
 import { KpiStrip } from "@/components/kpi-strip";
 import { Pipeline } from "@/components/pipeline";
 import { IntegrationsStrip } from "@/components/integrations-strip";
+import { BookSizeInput } from "@/components/book-size-input";
 
 export default function Dashboard() {
   const [health, setHealth] = useState<Health | null>(null);
@@ -31,6 +32,22 @@ export default function Dashboard() {
   const [err, setErr] = useState<string | null>(null);
   const [mode, setMode] = useState<ExecutionMode>("paper");
   const [runErrors, setRunErrors] = useState<string[]>([]);
+  const [portfolioUsd, setPortfolioUsd] = useState<number>(100_000);
+
+  // Persist portfolio size across refreshes so the user's setting stays put.
+  useEffect(() => {
+    const stored = typeof window !== "undefined" && localStorage.getItem("consilium.portfolio_usd");
+    if (stored) {
+      const n = Number(stored);
+      if (Number.isFinite(n) && n > 0) setPortfolioUsd(n);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("consilium.portfolio_usd", String(portfolioUsd));
+    }
+  }, [portfolioUsd]);
 
   const refreshLedger = useCallback(async () => {
     try {
@@ -78,7 +95,7 @@ export default function Dashboard() {
         method: "POST",
         body: JSON.stringify({
           universe: ["BTC", "ETH", "SOL", "ARB", "OP"],
-          portfolio_value_usd: 100_000,
+          portfolio_value_usd: portfolioUsd,
           mode,
         }),
       });
@@ -102,7 +119,7 @@ export default function Dashboard() {
         body: JSON.stringify({
           universe: ["BTC", "ETH", "SOL", "ARB", "OP"],
           days: 30,
-          starting_capital: 100_000,
+          starting_capital: portfolioUsd,
         }),
       });
       setBacktest(b);
@@ -165,6 +182,7 @@ export default function Dashboard() {
               SoSoValue Buildathon submission
             </span>
           </div>
+          <BookSizeInput value={portfolioUsd} onChange={setPortfolioUsd} />
         </section>
 
         <KpiStrip
