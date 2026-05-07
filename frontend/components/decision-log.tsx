@@ -33,15 +33,15 @@ export function DecisionLog({ trades }: { trades: Trade[] }) {
         <div className="flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-brand animate-pulse" />
           <span className="mono text-[11px] uppercase tracking-wider">
-            EXECUTION_LOG
+            NETWORK_ACTIVITY
           </span>
         </div>
-        <span className="label">{trades.length} trades</span>
+        <span className="label">{trades.length} runs</span>
       </div>
 
       {trades.length === 0 ? (
         <div className="px-4 py-10 text-center text-xs text-muted italic">
-          No trades yet. Click <span className="text-brand">Run Cycle</span> to start.
+          Quiet on the network. Click <span className="text-brand">Run Cycle</span> to fire one.
         </div>
       ) : (
         <div className="overflow-auto max-h-[340px]">

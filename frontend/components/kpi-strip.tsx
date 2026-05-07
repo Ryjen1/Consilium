@@ -35,7 +35,7 @@ export function KpiStrip({
   const ret = backtest?.total_return_pct ?? null;
 
   const items = [
-    { label: "Portfolio Value", value: fmtUsd(gross), sub: `${nPositions} positions` },
+    { label: "Fund AUM", value: fmtUsd(gross), sub: `${nPositions} open names` },
     { label: "Gross Exposure", value: fmtUsd(gross), sub: "across universe" },
     {
       label: "Agents Active",
@@ -43,9 +43,9 @@ export function KpiStrip({
       sub: health?.mock_mode || health?.soso_quota_exhausted ? "fallback mode" : "live feeds",
     },
     {
-      label: "Last Cycle",
+      label: "Last Run",
       value: fmtTime(lastTrade),
-      sub: trades.length === 0 ? "no runs yet" : `${trades.length} trades in ledger`,
+      sub: trades.length === 0 ? "no runs yet" : `${trades.length} runs network-wide`,
     },
     {
       label: "30-Day Return",
