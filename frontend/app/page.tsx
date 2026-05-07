@@ -4,6 +4,7 @@ import { MarketTicker } from "@/components/market-ticker";
 import { SeamlessSplit } from "@/components/seamless-split";
 import { HeroDemo } from "@/components/hero-demo";
 import { ProofRow } from "@/components/proof-row";
+import { Logo } from "@/components/logo";
 
 const STEPS = [
   {
@@ -92,13 +93,8 @@ export default function Landing() {
     <div className="min-h-screen flex flex-col">
       <header className="sticky top-0 z-30 border-b border-border bg-bg/80 backdrop-blur-xl">
         <div className="px-6 h-14 flex items-center gap-4 max-w-[1200px] mx-auto w-full">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-brand to-brand2 flex items-center justify-center text-white text-sm font-bold shadow-glow">
-              C
-            </div>
-            <div className="text-sm font-semibold tracking-tight">
-              Consi<span className="text-brand">lium</span>
-            </div>
+          <Link href="/" className="group flex items-center">
+            <Logo size={28} />
           </Link>
           <nav className="hidden md:flex items-center gap-1 ml-4">
             <a href="#try" className="px-3 h-8 rounded-md text-[12px] text-muted hover:text-text flex items-center transition">Try it</a>

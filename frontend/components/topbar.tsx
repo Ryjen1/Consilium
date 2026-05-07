@@ -4,6 +4,7 @@ import clsx from "clsx";
 import type { ExecutionMode, Health } from "@/lib/api";
 import { ModeToggle } from "./mode-toggle";
 import { RunCycleButton } from "./run-cycle-button";
+import { Logo } from "./logo";
 
 export function Topbar({
   health,
@@ -34,16 +35,8 @@ export function Topbar({
   return (
     <header className="sticky top-0 z-30 border-b border-border bg-bg/80 backdrop-blur-xl">
       <div className="px-6 h-14 flex items-center gap-4">
-        <div className="flex items-center gap-2.5 shrink-0">
-          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-brand to-brand2 flex items-center justify-center text-white text-sm font-bold shadow-glow">
-            C
-          </div>
-          <div className="text-sm font-semibold tracking-tight">
-            Consi<span className="text-brand">lium</span>
-          </div>
-          <div className="label hidden md:block ml-2 border-l border-border pl-3">
-            Council of AI Analysts
-          </div>
+        <div className="shrink-0">
+          <Logo size={28} subtitle="Council of AI Analysts" />
         </div>
 
         <div className="ml-auto flex items-center gap-2">
