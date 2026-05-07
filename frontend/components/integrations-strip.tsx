@@ -5,7 +5,7 @@ const ITEMS = [
   { name: "SoSoValue Terminal", tag: "8 endpoints", status: "live" as const },
   { name: "SoDEX · perps", tag: "EIP-712 signed", status: "live" as const },
   { name: "SoDEX · spot", tag: "market data", status: "live" as const },
-  { name: "SSI Protocol", tag: "Wave 4", status: "planned" as const },
+  { name: "SSI Protocol", tag: "Post-buildathon", status: "planned" as const },
   { name: "ValueChain", tag: "Wave 3 audit log", status: "planned" as const },
   { name: "LangGraph", tag: "agent orchestration", status: "live" as const },
   { name: "eth-account", tag: "EIP-712", status: "live" as const },

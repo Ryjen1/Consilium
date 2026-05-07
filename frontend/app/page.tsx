@@ -68,7 +68,7 @@ const WAVES = [
     shipped: false,
   },
   {
-    q: "Wave 4",
+    q: "Post-buildathon",
     tag: "",
     title: "Marketplace on SSI",
     body: "LPs deposit into public Consilium strategies, auto-rebalanced through SoDEX.",
