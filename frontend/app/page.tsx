@@ -132,12 +132,9 @@ export default function Landing() {
           <h1 className="display text-4xl md:text-6xl lg:text-7xl max-w-4xl">
             Three AI analysts.{" "}
             <span className="text-brand">One sized trade.</span>
-            <br className="hidden md:block" /> Every three seconds.
           </h1>
           <p className="text-base md:text-lg text-muted max-w-2xl leading-relaxed">
-            Consilium runs a council of agents over live SoSoValue data and
-            lets a risk manager size each position. Paper ledger today.
-            EIP-712-signed SoDEX testnet execution in Wave 2.
+            Live SoSoValue data. Paper ledger today. SoDEX testnet in Wave 2.
           </p>
           <div className="flex items-center gap-3 pt-1 flex-wrap justify-center">
             <a
@@ -153,12 +150,6 @@ export default function Landing() {
             >
               Open the full app
             </Link>
-            <a
-              href="#how"
-              className="h-11 px-2 text-muted hover:text-text text-sm flex items-center transition"
-            >
-              How it works →
-            </a>
           </div>
         </section>
 
