@@ -7,11 +7,16 @@
 </p>
 
 <p align="center">
-  <sub>Opinion aggregation for on-chain trading · SoSoValue Buildathon Wave 1</sub>
+  <sub>Opinion aggregation for on-chain trading · SoSoValue Buildathon</sub>
 </p>
 
 <p align="center">
-  <sub>Codebase / Python package still uses the internal name <code>sosofund</code>; the product identity is <strong>Consilium</strong>.</sub>
+  <a href="https://consilium-sodex.vercel.app"><strong>Live demo →</strong></a> ·
+  <a href="https://consilium-api-s9gw.onrender.com/api/health"><strong>API →</strong></a>
+</p>
+
+<p align="center">
+  <sub>Codebase / Python package uses the internal name <code>sosofund</code>; the product identity is <strong>Consilium</strong>.</sub>
 </p>
 
 ---
