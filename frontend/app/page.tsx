@@ -130,13 +130,16 @@ export default function Landing() {
             SoSoValue Buildathon · Wave 1 live
           </div>
           <h1 className="display text-4xl md:text-6xl lg:text-7xl max-w-4xl">
-            Three AI analysts.{" "}
-            <span className="text-brand">One sized trade.</span>
+            Three specialist agents.{" "}
+            <span className="text-brand">One aggregated trade.</span>
           </h1>
           <p className="text-base md:text-lg text-muted max-w-2xl leading-relaxed">
-            Consilium runs a council of agents over live SoSoValue data and
-            lets a risk manager size each position. Paper ledger today.
-            EIP-712-signed SoDEX testnet execution in Wave 2.
+            <span className="text-text">ETF Flow</span>,{" "}
+            <span className="text-text">Unlock Risk</span>, and{" "}
+            <span className="text-text">KOL Narrative</span> agents debate
+            SoSoValue data. A risk manager arbitrates. A portfolio manager
+            emits one sized trade. Every cycle. In three seconds. Paper
+            ledger today, SoDEX testnet in Wave 2.
           </p>
           <div className="flex items-center gap-3 pt-1 flex-wrap justify-center">
             <a
