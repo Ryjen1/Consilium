@@ -20,6 +20,7 @@ import { KpiStrip } from "@/components/kpi-strip";
 import { Pipeline } from "@/components/pipeline";
 import { IntegrationsStrip } from "@/components/integrations-strip";
 import { BookSizeInput } from "@/components/book-size-input";
+import { FirstRun } from "@/components/first-run";
 
 export default function Dashboard() {
   const [health, setHealth] = useState<Health | null>(null);
@@ -33,6 +34,15 @@ export default function Dashboard() {
   const [mode, setMode] = useState<ExecutionMode>("paper");
   const [runErrors, setRunErrors] = useState<string[]>([]);
   const [portfolioUsd, setPortfolioUsd] = useState<number>(100_000);
+  // First-run gate: empty state IS the tutorial. Persisted in localStorage
+  // so we only show the teaching panel on a fresh browser.
+  const [hasRunBefore, setHasRunBefore] = useState<boolean>(true);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const seen = localStorage.getItem("consilium.has_run") === "1";
+    setHasRunBefore(seen);
+  }, []);
 
   // Persist portfolio size across refreshes so the user's setting stays put.
   useEffect(() => {
@@ -103,6 +113,12 @@ export default function Dashboard() {
       setRunErrors(r.errors ?? []);
       if (r.errors?.length) setErr(r.errors.join(" · "));
       await Promise.all([refreshLedger(), refreshHealth()]);
+      // Mark onboarding complete. From the next load on, the full dashboard
+      // renders immediately.
+      if (typeof window !== "undefined") {
+        localStorage.setItem("consilium.has_run", "1");
+      }
+      setHasRunBefore(true);
     } catch (e: any) {
       setErr(e.message);
     } finally {
@@ -185,50 +201,60 @@ export default function Dashboard() {
           <BookSizeInput value={portfolioUsd} onChange={setPortfolioUsd} />
         </section>
 
-        <KpiStrip
-          portfolio={portfolio}
-          health={health}
-          backtest={backtest}
-          trades={trades}
-        />
+        {hasRunBefore ? (
+          <>
+            <KpiStrip
+              portfolio={portfolio}
+              health={health}
+              backtest={backtest}
+              trades={trades}
+            />
 
-        <Pipeline
-          running={runningCycle}
-          signals={signals}
-          trades={trades}
-          mode={mode}
-          lastErrors={runErrors}
-        />
+            <Pipeline
+              running={runningCycle}
+              signals={signals}
+              trades={trades}
+              mode={mode}
+              lastErrors={runErrors}
+            />
 
-        <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2">
-            <PnLChart data={backtest} onRun={runBacktest} loading={runningBt} />
-          </div>
-          <PortfolioCard data={portfolio} />
-        </section>
+            <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="lg:col-span-2">
+                <PnLChart data={backtest} onRun={runBacktest} loading={runningBt} />
+              </div>
+              <PortfolioCard data={portfolio} />
+            </section>
 
-        <section>
-          <div className="flex items-center justify-between mb-2 px-1">
-            <h2 className="label">Analyst Agents</h2>
-            <span className="label">
-              {signals.length} signals · last cycle
-            </span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {(health?.agents ?? []).map((a) => (
-              <AgentPanel
-                key={a.name}
-                name={a.name}
-                description={a.description}
-                signals={signals}
-              />
-            ))}
-          </div>
-        </section>
+            <section>
+              <div className="flex items-center justify-between mb-2 px-1">
+                <h2 className="label">Analyst Agents</h2>
+                <span className="label">
+                  {signals.length} signals · last cycle
+                </span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {(health?.agents ?? []).map((a) => (
+                  <AgentPanel
+                    key={a.name}
+                    name={a.name}
+                    description={a.description}
+                    signals={signals}
+                  />
+                ))}
+              </div>
+            </section>
 
-        <section>
-          <DecisionLog trades={trades} />
-        </section>
+            <section>
+              <DecisionLog trades={trades} />
+            </section>
+          </>
+        ) : (
+          <FirstRun
+            onRun={runCycle}
+            running={runningCycle}
+            bookSize={portfolioUsd}
+          />
+        )}
 
         <IntegrationsStrip />
 

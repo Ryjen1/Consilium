@@ -19,7 +19,25 @@ const config: Config = {
         warn: "#f59e0b",
       },
       fontFamily: {
-        mono: ['"JetBrains Mono"', "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
+        sans: [
+          "var(--font-sans)",
+          "ui-sans-serif",
+          "system-ui",
+          "-apple-system",
+          "Segoe UI",
+          "Roboto",
+          "sans-serif",
+        ],
+        mono: [
+          "var(--font-mono)",
+          "ui-monospace",
+          "SFMono-Regular",
+          "Menlo",
+          "monospace",
+        ],
+      },
+      letterSpacing: {
+        tightest: "-0.03em",
       },
       boxShadow: {
         glow: "0 0 24px -8px rgba(139, 108, 255, 0.4)",
