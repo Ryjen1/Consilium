@@ -138,8 +138,7 @@ export default function Landing() {
             <span className="text-text">Unlock Risk</span>, and{" "}
             <span className="text-text">KOL Narrative</span> agents debate
             SoSoValue data. A risk manager arbitrates. A portfolio manager
-            emits one sized trade. Every cycle. In three seconds. Paper
-            ledger today, SoDEX testnet in Wave 2.
+            emits one sized trade. Every cycle.
           </p>
           <div className="flex items-center gap-3 pt-1 flex-wrap justify-center">
             <a
