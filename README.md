@@ -166,7 +166,7 @@ The AKINDO Buildathon rewards continuous progress across waves. Our plan:
 
 - **Backend:** Python 3.11 · FastAPI · LangGraph · httpx · SQLAlchemy · SQLite · Pydantic v2
 - **Frontend:** Next.js 14 · Tailwind · Recharts · TypeScript
-- **Data:** SoSoValue Terminal API (32 endpoints catalogued, 8 integrated) + SoDEX market data
+- **Data:** SoSoValue Terminal API (32 endpoints catalogued, 9 integrated) + SoDEX market data
 - **Execution:** Paper ledger + **SoDEX testnet perps (EIP-712 signed)** · ValueChain audit (Wave 3)
 - **Signing:** `eth-account` (EIP-712 typed data, 0x01-prefixed typed signatures)
 
