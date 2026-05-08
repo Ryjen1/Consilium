@@ -26,3 +26,8 @@ next-env.d.ts
 .vscode/
 .idea/
 .DS_Store
+
+# Private planning / pitch docs — never publish
+ROADMAP.md
+SUBMISSION.md
+plans/
