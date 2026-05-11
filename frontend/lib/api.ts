@@ -39,11 +39,23 @@ export type Trade = {
   executed_at: string;
 };
 
+export type ConsensusLevel = "solo" | "duo" | "super_majority";
+
+export type SizedPosition = {
+  target_weight: number;          // signed: + = long, - = short
+  direction: "long" | "short";
+  contributing_agents: string[];   // every agent that voted on this symbol
+  agreeing_agents: string[];       // agents that voted with the dominant direction
+  consensus: ConsensusLevel;
+  avg_confidence: number;
+  reasoning: string;
+};
+
 export type RunResult = {
   cycle_id: string | null;
   universe: string[];
   signals: Signal[];
-  sized_positions: Record<string, any>;
+  sized_positions: Record<string, SizedPosition>;
   trades: Trade[];
   errors: string[];
 };

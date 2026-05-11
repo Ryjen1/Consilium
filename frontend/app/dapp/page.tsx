@@ -8,6 +8,7 @@ import {
   type PortfolioResp,
   type RunResult,
   type Signal,
+  type SizedPosition,
   type Trade,
 } from "@/lib/api";
 import { AgentPanel } from "@/components/agent-panel";
@@ -21,10 +22,15 @@ import { Pipeline } from "@/components/pipeline";
 import { IntegrationsStrip } from "@/components/integrations-strip";
 import { BookSizeInput } from "@/components/book-size-input";
 import { FirstRun } from "@/components/first-run";
+import { DecisionPanel } from "@/components/decision-panel";
 
 export default function Dashboard() {
   const [health, setHealth] = useState<Health | null>(null);
   const [signals, setSignals] = useState<Signal[]>([]);
+  // Sized positions and trades from the LATEST cycle only (used by the
+  // DecisionPanel). The ledger-wide list is in `trades` below.
+  const [sized, setSized] = useState<Record<string, SizedPosition>>({});
+  const [cycleTrades, setCycleTrades] = useState<Trade[]>([]);
   const [trades, setTrades] = useState<Trade[]>([]);
   const [portfolio, setPortfolio] = useState<PortfolioResp | null>(null);
   const [backtest, setBacktest] = useState<BacktestResp | null>(null);
@@ -110,6 +116,8 @@ export default function Dashboard() {
         }),
       });
       setSignals(r.signals);
+      setSized(r.sized_positions ?? {});
+      setCycleTrades(r.trades ?? []);
       setRunErrors(r.errors ?? []);
       if (r.errors?.length) setErr(r.errors.join(" · "));
       await Promise.all([refreshLedger(), refreshHealth()]);
@@ -151,6 +159,8 @@ export default function Dashboard() {
     try {
       await api("/api/reset", { method: "POST" });
       setSignals([]);
+      setSized({});
+      setCycleTrades([]);
       setBacktest(null);
       setRunErrors([]);
       await refreshLedger();
@@ -216,6 +226,14 @@ export default function Dashboard() {
               trades={trades}
               mode={mode}
               lastErrors={runErrors}
+            />
+
+            <DecisionPanel
+              signals={signals}
+              sized={sized}
+              trades={cycleTrades}
+              bookSize={portfolioUsd}
+              agents={health?.agents ?? []}
             />
 
             <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
