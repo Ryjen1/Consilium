@@ -1,14 +1,28 @@
-"""Unlock Risk Agent — dilution warning via token-economics endpoint.
+"""Unlock Risk Agent — supply-overhang warning via market-snapshot endpoint.
 
-Logic:
-    - For each alt token in universe, pull /currencies/{id}/token-economics.
-    - Find unlocks in the next 7 days.
-    - If unlock amount > 3% of circulating supply -> short signal.
-    - Confidence proportional to unlock size relative to circulating.
+The original Wave-1 thesis was a 7-day forward unlock-window check using
+SoSoValue's /currencies/{id}/token-economics endpoint, but that endpoint
+returns null timestamps and null token_unlock summaries on the demo tier
+for the major tokens, which makes any forward-window logic impossible.
+
+We instead use /currencies/{id}/market-snapshot, which reliably returns:
+
+    {
+      "circulating_supply": <amount currently tradeable>,
+      "max_supply":         <hard cap or projected total>,
+      ...
+    }
+
+A token whose `(max_supply - circulating) / circulating` ratio is high
+carries supply-overhang risk: future emissions, vesting cliffs, or staking
+unlocks have to land somewhere, and they push price down whenever they do.
+The agent fires a SHORT signal weighted by how far the overhang ratio
+exceeds the threshold.
+
+For tokens with no defined max_supply (ETH, SOL — both inflate), we cannot
+compute overhang and the agent stays silent.
 """
 from __future__ import annotations
-
-from datetime import datetime, timedelta, timezone
 
 from ..client import get_client, symbol_to_id
 from .base import Agent, Signal
@@ -16,15 +30,17 @@ from .base import Agent, Signal
 
 class UnlockRiskAgent(Agent):
     name = "Unlock Risk"
-    description = "Flags imminent token unlocks that could dilute holders."
+    description = (
+        "Flags supply-overhang risk: tokens with a large fraction of supply "
+        "still locked relative to their current circulating float."
+    )
 
-    WINDOW_DAYS = 7
-    DILUTION_THRESHOLD = 0.03  # 3% of circulating
+    # Overhang ratio = (max_supply - circulating) / circulating.
+    # 0.4 means 40 locked tokens for every 100 in float — meaningful pressure.
+    OVERHANG_THRESHOLD = 0.4
 
     async def run(self, universe: list[str]) -> list[Signal]:
         client = get_client()
-        now = datetime.now(tz=timezone.utc)
-        horizon = now + timedelta(days=self.WINDOW_DAYS)
         signals: list[Signal] = []
 
         for sym in universe:
@@ -32,58 +48,36 @@ class UnlockRiskAgent(Agent):
             if not cid:
                 continue
             try:
-                econ = await client.token_economics(cid)
+                snap = await client.currency_snapshot(cid)
             except Exception:
                 continue
-
-            # SoSoValue returns `null` (not {}) for tokens with no unlock data.
-            # Guard every nested access against None before .get().
-            if not isinstance(econ, dict):
+            if not isinstance(snap, dict):
                 continue
 
-            token_unlock = econ.get("token_unlock") or {}
             try:
-                circ = float(token_unlock.get("circulating_supply") or 0)
+                circ = float(snap.get("circulating_supply") or 0)
+                max_supply = float(snap.get("max_supply") or 0)
             except (TypeError, ValueError):
                 continue
-            if circ <= 0:
+            # Need both numbers to compute overhang. Tokens with no defined
+            # max (ETH, SOL — perpetual inflation) are skipped intentionally.
+            if circ <= 0 or max_supply <= 0:
                 continue
 
-            imminent_unlock = 0.0
-            labels: list[str] = []
-            timeline = econ.get("unlock_timeline") or []
-            for row in timeline:
-                if not isinstance(row, dict):
-                    continue
-                try:
-                    ts = int(row.get("timestamp") or 0)
-                except (TypeError, ValueError):
-                    continue
-                if ts <= 0:
-                    continue
-                when = datetime.fromtimestamp(ts / 1000, tz=timezone.utc)
-                if now <= when <= horizon:
-                    for v in row.get("vestings") or []:
-                        if not isinstance(v, dict):
-                            continue
-                        try:
-                            imminent_unlock += float(v.get("amount") or 0)
-                        except (TypeError, ValueError):
-                            continue
-                        labels.append(str(v.get("label") or ""))
-
-            if imminent_unlock <= 0:
+            locked = max(0.0, max_supply - circ)
+            if locked <= 0:
                 continue
 
-            dilution = imminent_unlock / circ
-            if dilution < self.DILUTION_THRESHOLD:
+            overhang = locked / circ
+            if overhang < self.OVERHANG_THRESHOLD:
                 continue
 
-            confidence = min(1.0, dilution / (self.DILUTION_THRESHOLD * 3))
+            confidence = min(1.0, overhang / (self.OVERHANG_THRESHOLD * 3))
+
             thesis = (
-                f"{sym.upper()} faces a {dilution*100:.1f}% circulating-supply unlock "
-                f"({', '.join(set(labels)) or 'mixed'}) within {self.WINDOW_DAYS} days — "
-                f"expect supply-side pressure."
+                f"{sym.upper()} carries {overhang*100:.0f}% supply overhang: "
+                f"{locked/1e6:.1f}M tokens still locked vs {circ/1e6:.1f}M "
+                f"in circulation. Expect structural sell pressure as cliffs unlock."
             )
             signals.append(
                 Signal(
@@ -93,10 +87,11 @@ class UnlockRiskAgent(Agent):
                     confidence=round(confidence, 3),
                     reasoning=thesis,
                     evidence={
-                        "unlock_amount": imminent_unlock,
                         "circulating_supply": circ,
-                        "dilution_pct": round(dilution, 4),
-                        "window_days": self.WINDOW_DAYS,
+                        "max_supply": max_supply,
+                        "locked_estimate": locked,
+                        "overhang_ratio": round(overhang, 3),
+                        "threshold": self.OVERHANG_THRESHOLD,
                     },
                 )
             )

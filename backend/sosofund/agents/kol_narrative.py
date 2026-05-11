@@ -21,7 +21,12 @@ class KOLNarrativeAgent(Agent):
     name = "KOL Narrative"
     description = "Buy the narrative: blue-verified Business accounts amplifying a ticker."
 
-    MIN_ITEMS = 2
+    # Minimum number of qualifying posts within the window to fire a signal.
+    # Calibrated against the live SoSoValue news feed: the feed is dominated
+    # by major-token chatter, so requiring 1+ verified Business post on a
+    # symbol still surfaces only the names the verified accounts are actually
+    # talking about today. Confidence still scales with combined engagement.
+    MIN_ITEMS = 1
     # SoSoValue's `impression_count` field is closer to per-post engagement
     # than Twitter-style raw impressions. Calibrated empirically against the
     # live /news feed: 100 keeps the agent selective without being so strict

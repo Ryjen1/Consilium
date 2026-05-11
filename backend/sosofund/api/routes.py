@@ -218,14 +218,16 @@ async def markets() -> list[dict]:
     client = get_sodex_client()
 
     # (display_symbol, sodex_symbol, market_type)
+    # SOSO sits in the third slot, right after BTC and ETH, so the
+    # SoSoValue ecosystem token is visible without scrolling the ticker.
     requests: list[tuple[str, str, str]] = [
         ("BTC", "BTC-USD", "perps"),
         ("ETH", "ETH-USD", "perps"),
+        ("SOSO", "WSOSO_vUSDC", "spot"),
         ("SOL", "SOL-USD", "perps"),
         ("XRP", "XRP-USD", "perps"),
         ("AVAX", "AVAX-USD", "perps"),
         ("DOGE", "DOGE-USD", "perps"),
-        ("SOSO", "WSOSO_vUSDC", "spot"),
     ]
     out: list[dict] = []
     for display, sodex_sym, market in requests:
