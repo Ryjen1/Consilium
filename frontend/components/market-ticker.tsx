@@ -9,6 +9,7 @@ type Market = {
   full_symbol: string;
   price: number;
   change_pct_24h: number;
+  market_type?: "spot" | "perps";
 };
 
 type Flash = "up" | "down" | null;
@@ -122,6 +123,14 @@ export function MarketTicker() {
               <span className="mono font-semibold text-sm text-text">
                 {m.symbol}
               </span>
+              {m.market_type === "spot" && (
+                <span
+                  className="mono text-[9px] uppercase tracking-wider px-1 py-0.5 rounded border border-brand/30 bg-brand/10 text-brand"
+                  title="Spot market on SoDEX"
+                >
+                  spot
+                </span>
+              )}
               <span
                 className={clsx(
                   "mono text-sm transition-colors duration-500",

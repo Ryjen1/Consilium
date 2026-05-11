@@ -206,33 +206,54 @@ async def sodex_tickers() -> list[dict]:
 
 @router.get("/markets")
 async def markets() -> list[dict]:
-    """Live market tickers via SoDEX perps (unsigned, high-quota)."""
+    """Live market tickers via SoDEX (unsigned, high-quota).
+
+    Aggregates two venues so the SoSoValue-ecosystem token shows up next
+    to the rest of the market:
+      - perps for BTC, ETH, SOL, XRP, AVAX, DOGE
+      - spot  for SOSO (no perps market exists yet for this token)
+    """
     from ..sodex import get_sodex_client
 
     client = get_sodex_client()
-    symbols = ["BTC-USD", "ETH-USD", "SOL-USD", "XRP-USD", "AVAX-USD", "DOGE-USD"]
+
+    # (display_symbol, sodex_symbol, market_type)
+    requests: list[tuple[str, str, str]] = [
+        ("BTC", "BTC-USD", "perps"),
+        ("ETH", "ETH-USD", "perps"),
+        ("SOL", "SOL-USD", "perps"),
+        ("XRP", "XRP-USD", "perps"),
+        ("AVAX", "AVAX-USD", "perps"),
+        ("DOGE", "DOGE-USD", "perps"),
+        ("SOSO", "WSOSO_vUSDC", "spot"),
+    ]
     out: list[dict] = []
-    for sym in symbols:
+    for display, sodex_sym, market in requests:
         try:
-            rows = await client.perps_tickers(sym)
+            rows = (
+                await client.perps_tickers(sodex_sym)
+                if market == "perps"
+                else await client.spot_tickers(sodex_sym)
+            )
             if not rows:
                 continue
             t = rows[0]
             last = float(t.get("lastPx") or 0)
-            # SoDEX returns changePct already as a percentage (0.59 = 0.59%),
-            # not as a ratio. No multiplication needed.
+            # SoDEX returns changePct already as a percentage (0.59 = 0.59%).
             change_pct = float(t.get("changePct") or 0)
-            # Thin testnet books occasionally spit absurd 24h %s (a single
-            # whale order can move the book 500%+). Clamp for display sanity.
+            # Thin testnet books can produce absurd 24h moves on a single fill.
             if change_pct > 100 or change_pct < -100:
                 change_pct = max(-100.0, min(100.0, change_pct))
             out.append(
                 {
-                    "symbol": sym.replace("-USD", ""),
-                    "full_symbol": sym,
+                    "symbol": display,
+                    "full_symbol": sodex_sym,
+                    "market_type": market,
                     "price": last,
                     "change_pct_24h": change_pct,
-                    "mark_price": float(t.get("markPrice") or 0),
+                    # Mark price is a perps-only concept; spot tickers don't
+                    # carry it. Default to last price for spot rows.
+                    "mark_price": float(t.get("markPrice") or last or 0),
                     "bid": float(t.get("bidPx") or 0),
                     "ask": float(t.get("askPx") or 0),
                 }

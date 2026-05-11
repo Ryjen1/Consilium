@@ -20,28 +20,41 @@ from ..graph.state import FundState
 from ..sodex import get_sodex_client
 
 
-# Map SoSoFund universe symbols to SoDEX perps symbols.
-# SoDEX exposes 40+ perps markets; we stick to the liquid majors for Wave 1.
+# Map SoSoFund universe symbols to SoDEX markets.
+# Most majors are perps; SOSO only has a spot market today, so it routes
+# through the spot kline endpoint instead.
 _SODEX_PERPS_SYMBOL = {
     "BTC": "BTC-USD",
     "ETH": "ETH-USD",
     "SOL": "SOL-USD",
     "XRP": "XRP-USD",
     "AVAX": "AVAX-USD",
-    # ARB / OP not on SoDEX testnet perps today; backtester falls back to empty.
+}
+_SODEX_SPOT_SYMBOL = {
+    "SOSO": "WSOSO_vUSDC",
 }
 
 
 async def _price_series(symbol: str, limit: int = 60) -> list[tuple[int, float]]:
-    """Daily close series for a universe symbol, via SoDEX perps klines.
+    """Daily close series for a universe symbol via the appropriate SoDEX market.
 
-    Offloads the highest-volume data call off SoSoValue (which has a strict
-    20/min quota) onto SoDEX (1200 weight/min, unsigned).
+    Routes through perps for the major USD pairs and through spot for tokens
+    that only have a spot market on SoDEX testnet (currently just SOSO). Both
+    paths are unsigned and high-quota, so this never costs a SoSoValue call.
     """
-    sodex_sym = _SODEX_PERPS_SYMBOL.get(symbol.upper())
-    if not sodex_sym:
+    upper = symbol.upper()
+    client = get_sodex_client()
+    if upper in _SODEX_PERPS_SYMBOL:
+        rows = await client.perps_klines(
+            _SODEX_PERPS_SYMBOL[upper], interval="1D", limit=limit
+        )
+    elif upper in _SODEX_SPOT_SYMBOL:
+        rows = await client.spot_klines(
+            _SODEX_SPOT_SYMBOL[upper], interval="1D", limit=limit
+        )
+    else:
         return []
-    rows = await get_sodex_client().perps_klines(sodex_sym, interval="1D", limit=limit)
+
     out: list[tuple[int, float]] = []
     for r in rows:
         try:
