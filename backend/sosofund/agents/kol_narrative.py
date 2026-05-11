@@ -22,8 +22,33 @@ class KOLNarrativeAgent(Agent):
     description = "Buy the narrative: blue-verified Business accounts amplifying a ticker."
 
     MIN_ITEMS = 2
-    MIN_IMPRESSIONS = 500_000
+    # SoSoValue's `impression_count` field is closer to per-post engagement
+    # than Twitter-style raw impressions. Calibrated empirically against the
+    # live /news feed: 100 keeps the agent selective without being so strict
+    # that genuine narrative momentum gets missed.
+    MIN_IMPRESSIONS = 100
     WINDOW_HOURS = 24
+
+    # SoSoValue's `matched_currencies` field is a quirk: the per-item objects
+    # use `name` for the FULL project name ("BITCOIN", "ETHEREUM", "SOLANA")
+    # and `full_name` for the ticker ("BTC", "ETH", "SOL"). The original
+    # implementation matched on `m.name` against tickers, which never hit.
+    # We now match on either field, and also map common project names to
+    # their tickers so a "BITCOIN"-tagged post correctly attributes to BTC.
+    _NAME_TO_TICKER = {
+        "BITCOIN": "BTC",
+        "ETHEREUM": "ETH",
+        "SOLANA": "SOL",
+        "ARBITRUM": "ARB",
+        "OPTIMISM": "OP",
+        "AVALANCHE": "AVAX",
+        "RIPPLE": "XRP",
+        "DOGECOIN": "DOGE",
+        "CHAINLINK": "LINK",
+        "POLYGON": "MATIC",
+        "TRON": "TRX",
+        "BINANCE COIN": "BNB",
+    }
 
     async def run(self, universe: list[str]) -> list[Signal]:
         client = get_client()
@@ -62,14 +87,29 @@ class KOLNarrativeAgent(Agent):
             for m in it.get("matched_currencies") or []:
                 if not isinstance(m, dict):
                     continue
-                sym = str(m.get("name") or "").upper()
-                if sym in tallies:
-                    tallies[sym]["count"] += 1
-                    try:
-                        tallies[sym]["impressions"] += int(it.get("impression_count") or 0)
-                    except (TypeError, ValueError):
-                        pass
-                    tallies[sym]["titles"].append(str(it.get("title") or ""))
+                # Try every plausible identifier on the matched-currency object.
+                # SoSoValue's `name` is the project name (e.g. "BITCOIN"), and
+                # `full_name` is the ticker (e.g. "BTC"). We also fall back to
+                # mapping known project names to tickers.
+                candidates = {
+                    str(m.get("name") or "").upper(),
+                    str(m.get("full_name") or "").upper(),
+                    str(m.get("symbol") or "").upper(),
+                }
+                # Resolve project-name -> ticker via the static map.
+                for c in list(candidates):
+                    if c in self._NAME_TO_TICKER:
+                        candidates.add(self._NAME_TO_TICKER[c])
+                # Find the first candidate that matches our universe.
+                hit = next((c for c in candidates if c in tallies), None)
+                if not hit:
+                    continue
+                tallies[hit]["count"] += 1
+                try:
+                    tallies[hit]["impressions"] += int(it.get("impression_count") or 0)
+                except (TypeError, ValueError):
+                    pass
+                tallies[hit]["titles"].append(str(it.get("title") or ""))
 
         signals: list[Signal] = []
         for sym, agg in tallies.items():
@@ -78,10 +118,20 @@ class KOLNarrativeAgent(Agent):
             if agg["impressions"] < self.MIN_IMPRESSIONS:
                 continue
             confidence = min(1.0, agg["impressions"] / (self.MIN_IMPRESSIONS * 4))
-            sample = agg["titles"][0] if agg["titles"] else ""
+            # First non-empty sample title, truncated for readability.
+            sample = next((t for t in agg["titles"] if t), "")
+            # Smart-format engagement: M for >=1M, k for >=1k, raw otherwise.
+            imp = agg["impressions"]
+            if imp >= 1_000_000:
+                imp_str = f"{imp / 1e6:.1f}M"
+            elif imp >= 1_000:
+                imp_str = f"{imp / 1e3:.1f}k"
+            else:
+                imp_str = f"{imp}"
+            sample_part = f" Sample: \"{sample[:80]}\"." if sample else ""
             thesis = (
                 f"{sym} is trending across {agg['count']} Business-verified accounts in 24h "
-                f"with {agg['impressions']/1e6:.1f}M impressions. Sample: \"{sample[:80]}\"."
+                f"with {imp_str} engagement.{sample_part}"
             )
             signals.append(
                 Signal(
