@@ -26,7 +26,9 @@ class Settings(BaseSettings):
     sodex_evm_private_key: str = ""  # required only for live execution
     sodex_evm_address: str = ""  # the 0x… address matching the private key
     sodex_perps_account_id: int = 0  # 0 = primary account
-    sodex_api_key_name: str = "sosofund"
+    # Empty by default = sign with master wallet directly (no X-API-Key header).
+    # Set this only after registering a named API key via the SoDEX UI.
+    sodex_api_key_name: str = ""
 
     # App
     app_env: str = "dev"

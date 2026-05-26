@@ -120,9 +120,22 @@ def make_auth_headers(
     private_key: str | None = None,
     network: str | None = None,
 ) -> tuple[dict[str, str], int]:
-    """Build the X-API-Key / X-API-Sign / X-API-Nonce headers for a signed write.
+    """Build SoDEX auth headers for a signed write.
 
-    Defaults come from settings so callers can pass just the action payload.
+    SoDEX supports two signing modes:
+
+    1. **Named API key.** A separately registered key with a name (e.g.
+       ``"api-key-01"``). Requires going through the SoDEX UI's API-key
+       flow first, then sending ``X-API-Key: <name>`` on every request.
+
+    2. **Master wallet directly.** Sign with the wallet that owns the
+       perps account. In this mode SoDEX expects ``X-API-Key`` to be
+       **omitted entirely** — the signature itself identifies the signer.
+
+    We default to mode 2 (master-wallet signing) because it works
+    immediately for any whitelisted wallet without an extra registration
+    step. Setting ``SODEX_API_KEY_NAME`` to a non-empty string opts into
+    mode 1 for users who have registered a named API key.
     """
     s = get_settings()
     pk = private_key or s.sodex_evm_private_key
@@ -130,14 +143,15 @@ def make_auth_headers(
         raise RuntimeError(
             "SoDEX execution requires SODEX_EVM_PRIVATE_KEY in .env"
         )
-    name = api_key_name or s.sodex_api_key_name
+    name = api_key_name if api_key_name is not None else s.sodex_api_key_name
     net = network or s.sodex_network
     sig, nonce = sign_exchange_action(market, action_type, params, pk, network=net)
-    return (
-        {
-            "X-API-Key": name,
-            "X-API-Sign": sig,
-            "X-API-Nonce": str(nonce),
-        },
-        nonce,
-    )
+    headers: dict[str, str] = {
+        "X-API-Sign": sig,
+        "X-API-Nonce": str(nonce),
+    }
+    # Only include X-API-Key when the user has explicitly set a named API key.
+    # Empty/None means "sign with master wallet directly" — omit the header.
+    if name:
+        headers["X-API-Key"] = name
+    return headers, nonce
