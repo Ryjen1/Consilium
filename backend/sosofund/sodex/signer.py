@@ -105,9 +105,18 @@ def sign_exchange_action(
     }
     signable = encode_typed_data(full_message=typed)
     signed = Account.sign_message(signable, private_key=private_key)
-    # SoDEX expects a 66-byte typed signature: 0x01 || 65-byte ECDSA sig.
-    raw = signed.signature
-    prefixed = b"\x01" + bytes(raw)
+    # SoDEX expects a 66-byte typed signature: 0x01 || r || s || v
+    # where v is the raw recovery id in {0, 1}, NOT the EIP-155 form {27, 28}.
+    # eth-account / web3.py return v in {27, 28}; the SoDEX Go SDK and verifier
+    # use go-ethereum's crypto.Sign which produces v in {0, 1}. We normalize
+    # so the server's recovery succeeds.
+    raw = bytes(signed.signature)
+    if len(raw) == 65:
+        v = raw[64]
+        if v >= 27:
+            v -= 27
+        raw = raw[:64] + bytes([v])
+    prefixed = b"\x01" + raw
     return "0x" + prefixed.hex(), nonce
 
 
