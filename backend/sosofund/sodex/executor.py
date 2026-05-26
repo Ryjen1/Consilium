@@ -175,8 +175,34 @@ async def sodex_execute(state: FundState) -> FundState:
             )
             resp = await client.perps_place_orders(params, auth)
             executed.append({"symbol": t.symbol, "response": resp})
-            if isinstance(resp, dict) and resp.get("code") not in (0, None):
-                errors.append(f"{t.symbol}: sodex {resp.get('code')} {resp.get('error') or resp.get('message')}")
+            # SoDEX returns two layers of status:
+            #   envelope: { code, message, data: [...] }
+            #   per-order: data[i] = { code, orderID?, error? }
+            # We treat anything other than envelope.code == 0 AND every
+            # per-order code == 0 as a failure for this symbol.
+            envelope_code = resp.get("code") if isinstance(resp, dict) else None
+            if envelope_code not in (0, None):
+                errors.append(
+                    f"{t.symbol}: sodex envelope {envelope_code} "
+                    f"{resp.get('error') or resp.get('message')}"
+                )
+            else:
+                per_order = resp.get("data") or []
+                for od in per_order if isinstance(per_order, list) else []:
+                    oc = od.get("code") if isinstance(od, dict) else None
+                    if oc not in (0, None):
+                        errors.append(
+                            f"{t.symbol}: sodex order {oc} "
+                            f"{od.get('error') or od.get('message')}"
+                        )
+                    else:
+                        log.info(
+                            "sodex_order_filled",
+                            cycle_id=cycle_id,
+                            symbol=t.symbol,
+                            orderID=od.get("orderID"),
+                            clOrdID=od.get("clOrdID"),
+                        )
         except Exception as e:
             log.warning("sodex_order_failed", symbol=t.symbol, error=str(e))
             errors.append(f"{t.symbol}: {e}")
