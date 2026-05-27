@@ -169,6 +169,21 @@ async def run_backtest(req: BacktestRequest) -> dict:
     )
 
 
+@router.get("/signals/outcomes")
+async def signal_outcomes() -> list[dict]:
+    """Retrospective signal outcome tracking (HIT / STOP / DRIFT).
+
+    Evaluates each past decision from the SQLite ledger against 7-day
+    forward SoDEX klines. Returns a list of classified signals with
+    entry price, 7d high/low, and outcome.
+
+    Used by the dashboard's OutcomeTracker card.
+    """
+    from ..backtest.outcome_tracker import compute_outcomes
+
+    return await compute_outcomes()
+
+
 @router.get("/sodex/tickers")
 async def sodex_tickers() -> list[dict]:
     """Live SoDEX perps tickers for the ticker strip on the landing/dapp.
