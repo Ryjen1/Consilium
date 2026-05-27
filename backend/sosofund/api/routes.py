@@ -204,6 +204,26 @@ async def sodex_tickers() -> list[dict]:
     return out
 
 
+@router.get("/sectors")
+async def sectors() -> list[dict]:
+    """Live sector snapshot from SoSoValue's sector-spotlight endpoint."""
+    from ..client import get_client
+    client = get_client()
+    data = await client._get("/currencies/sector-spotlight")
+    if not isinstance(data, dict):
+        return []
+    raw = data.get("sector") or []
+    return [
+        {
+            "name": s.get("name", ""),
+            "change_pct_24h": float(s.get("change_pct_24h") or 0),
+            "marketcap_dom": float(s.get("marketcap_dom") or 0),
+        }
+        for s in raw
+        if isinstance(s, dict) and s.get("name")
+    ]
+
+
 @router.get("/markets")
 async def markets() -> list[dict]:
     """Live market tickers via SoDEX (unsigned, high-quota).

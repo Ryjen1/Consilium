@@ -23,6 +23,7 @@ import { IntegrationsStrip } from "@/components/integrations-strip";
 import { BookSizeInput } from "@/components/book-size-input";
 import { FirstRun } from "@/components/first-run";
 import { DecisionPanel } from "@/components/decision-panel";
+import { SectorIntel } from "@/components/sector-intel";
 
 export default function Dashboard() {
   const [health, setHealth] = useState<Health | null>(null);
@@ -242,6 +243,8 @@ export default function Dashboard() {
               </div>
               <PortfolioCard data={portfolio} />
             </section>
+
+            <SectorIntel />
 
             <section>
               <div className="flex items-center justify-between mb-2 px-1">

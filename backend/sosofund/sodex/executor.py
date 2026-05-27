@@ -35,18 +35,38 @@ MAX_TRADE_USD = 500.0  # testnet safety cap; tweak per strategy in Wave 2
 # enums per the Go SDK (common/enums)
 SIDE_BUY = 1
 SIDE_SELL = 2
-TYPE_MARKET = 2
+TYPE_LIMIT = 1  # SoDEX requires Limit+IOC, not bare Market orders
 TIF_IOC = 3
 MODIFIER_NONE = 1
 POSITION_SIDE_ONE_WAY = 1
 
 # Map universe symbols to SoDEX perps symbol names.
+# Excludes SOSO (no perps market yet — spot only via the market-ticker).
 UNIVERSE_TO_PERPS = {
     "BTC": "BTC-USD",
     "ETH": "ETH-USD",
     "SOL": "SOL-USD",
     "XRP": "XRP-USD",
     "AVAX": "AVAX-USD",
+    "ADA": "ADA-USD",
+    "LINK": "LINK-USD",
+    "BNB": "BNB-USD",
+    "DOGE": "DOGE-USD",
+    "SUI": "SUI-USD",
+    "AAVE": "AAVE-USD",
+    "UNI": "UNI-USD",
+    "HYPE": "HYPE-USD",
+    "LTC": "LTC-USD",
+    "ZEC": "ZEC-USD",
+    "ENA": "ENA-USD",
+    "ONDO": "ONDO-USD",
+    "WLD": "WLD-USD",
+    "WLFI": "WLFI-USD",
+    "PENGU": "PENGU-USD",
+    "TON": "TON-USD",
+    "SHIB": "1000SHIB-USD",
+    "PEPE": "1000PEPE-USD",
+    "XAUT": "XAUT-USD",
 }
 
 
@@ -69,7 +89,12 @@ def _round_step(value: Decimal, step: Decimal) -> Decimal:
 async def _build_order_params(
     symbol: str, side_usd: float, account_id: int, mark_price: Decimal
 ) -> dict[str, Any]:
-    """Build the `params` object for a perps newOrder."""
+    """Build the `params` object for a perps newOrder (Limit+IOC at market).
+
+    SoDEX requires Limit orders (type=1) rather than bare Market orders.
+    Using Limit+IOC at the current mark price gives equivalent fill
+    behavior while passing SoDEX's order-type validation.
+    """
     sodex_sym = UNIVERSE_TO_PERPS.get(symbol.upper())
     if not sodex_sym:
         raise ValueError(f"Symbol not whitelisted for SoDEX execution: {symbol}")
@@ -78,15 +103,19 @@ async def _build_order_params(
     symbol_id = int(meta["id"])
     step_size = Decimal(meta["stepSize"])
     qty_precision = int(meta["quantityPrecision"])
+    price_precision = int(meta["pricePrecision"])
 
     qty = Decimal(str(abs(side_usd))) / mark_price
     qty = _round_step(qty, step_size)
-    # Clamp precision
     qty = qty.quantize(Decimal(10) ** -qty_precision)
     if qty <= 0:
         raise ValueError(
             f"Computed quantity <= 0 for {symbol} at mark {mark_price} with notional ${side_usd}"
         )
+
+    # Limit price: use mark_price for buys, mark_price for sells.
+    # The IOC TIF ensures it fills immediately at best available price.
+    limit_price = mark_price.quantize(Decimal(10) ** -price_precision)
 
     side = SIDE_BUY if side_usd > 0 else SIDE_SELL
     order_item = {
@@ -94,8 +123,9 @@ async def _build_order_params(
         "clOrdID": _new_cl_ord_id(),
         "modifier": MODIFIER_NONE,
         "side": side,
-        "type": TYPE_MARKET,
+        "type": TYPE_LIMIT,
         "timeInForce": TIF_IOC,
+        "price": format(limit_price, "f"),
         "quantity": format(qty.normalize(), "f"),
         "reduceOnly": False,
         "positionSide": POSITION_SIDE_ONE_WAY,
