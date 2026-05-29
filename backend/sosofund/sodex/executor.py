@@ -300,4 +300,14 @@ async def _sodex_execute_inner(state: FundState) -> FundState:
         attempted=len(trades),
         errors=len(errors),
     )
-    return {**state, "cycle_id": cycle_id, "errors": errors}
+    # Debug: include raw SoDEX responses in the API response so the caller
+    # can inspect what SoDEX actually returned for each order.
+    return {
+        **state,
+        "cycle_id": cycle_id,
+        "errors": errors,
+        "_debug_sodex_responses": [
+            {"symbol": ex["symbol"], "response": ex["response"]}
+            for ex in executed
+        ],
+    }
