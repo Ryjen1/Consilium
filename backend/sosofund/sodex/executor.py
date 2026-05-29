@@ -216,6 +216,12 @@ async def _sodex_execute_inner(state: FundState) -> FundState:
                 nonce=nonce,
             )
             resp = await client.perps_place_orders(params, auth)
+            log.info(
+                "sodex_raw_response",
+                cycle_id=cycle_id,
+                symbol=t.symbol,
+                response=str(resp)[:500],
+            )
             executed.append({"symbol": t.symbol, "response": resp})
             # SoDEX returns two layers of status:
             #   envelope: { code, message, data: [...] }
