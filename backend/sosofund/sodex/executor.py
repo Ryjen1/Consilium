@@ -186,6 +186,7 @@ async def _sodex_execute_inner(state: FundState) -> FundState:
     signals = state.get("signals", []) or []
     account_id = s.sodex_perps_account_id or 0
     cycle_id = uuid.uuid4().hex[:12]
+    session_id = state.get("session_id") or ""
 
     client = get_sodex_client()
 
