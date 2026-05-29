@@ -357,8 +357,8 @@ async def sodex_test_order() -> dict[str, Any]:
             "side": 2,  # SELL
             "type": 1,  # LIMIT
             "timeInForce": 3,  # IOC
-            "price": format(price, "f"),
-            "quantity": format(qty, "f"),
+            "price": str(int(price)) if price_precision == 0 else str(price),
+            "quantity": str(int(qty)) if qty_precision == 0 else str(qty),
             "reduceOnly": False,
             "positionSide": 1,
         }],
