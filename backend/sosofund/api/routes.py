@@ -300,6 +300,86 @@ async def markets() -> list[dict]:
     return out
 
 
+@router.post("/sodex/test-order")
+async def sodex_test_order() -> dict[str, Any]:
+    """Send a minimal signed order to SoDEX testnet to verify the signing
+    path works end-to-end.
+
+    Bypasses the agent pipeline entirely. Sends a single BTC sell order
+    for $15 notional (well above minNotional). Returns the raw SoDEX
+    response so we can inspect exactly what SoDEX says.
+
+    DELETE THIS ENDPOINT before Wave 2 submission.
+    """
+    from ..sodex.client import get_sodex_client
+    from ..sodex.signer import make_auth_headers
+    from ..graph.state import Trade
+    from datetime import datetime, timezone
+
+    s = get_settings()
+    if not s.sodex_execution_ready:
+        return {"error": "SoDEX credentials not configured"}
+
+    client = get_sodex_client()
+    account_id = s.sodex_perps_account_id or 0
+
+    # Resolve BTC-USD symbol metadata
+    syms = await client.perps_symbols()
+    btc = next((x for x in syms if x.get("name") == "BTC-USD"), None)
+    if not btc:
+        return {"error": "BTC-USD not found on SoDEX"}
+
+    symbol_id = int(btc["id"])
+    step_size = float(btc["stepSize"])
+    qty_precision = int(btc["quantityPrecision"])
+    price_precision = int(btc["pricePrecision"])
+
+    # Get current mark price
+    tickers = await client.perps_tickers("BTC-USD")
+    if not tickers:
+        return {"error": "No BTC-USD ticker"}
+    mark = float(tickers[0].get("markPrice") or tickers[0].get("lastPx") or 0)
+    if mark <= 0:
+        return {"error": f"Invalid mark price: {mark}"}
+
+    # Calculate qty: $15 notional / mark price, rounded to step size
+    qty = 15.0 / mark
+    # Round down to step_size precision
+    qty = round(qty - (qty % step_size), qty_precision)
+    price = round(mark, price_precision)
+
+    params = {
+        "accountID": account_id,
+        "symbolID": symbol_id,
+        "orders": [{
+            "clOrdID": f"test-{int(datetime.now(tz=timezone.utc).timestamp())}",
+            "modifier": 1,
+            "side": 2,  # SELL
+            "type": 1,  # LIMIT
+            "timeInForce": 3,  # IOC
+            "price": format(price, "f"),
+            "quantity": format(qty, "f"),
+            "reduceOnly": False,
+            "positionSide": 1,
+        }],
+    }
+
+    auth, nonce = make_auth_headers("perps", "newOrder", params)
+
+    resp = await client.perps_place_orders(params, auth)
+
+    return {
+        "order_params": params,
+        "nonce": nonce,
+        "auth_headers": {k: v[:20] + "..." if len(v) > 20 else v for k, v in auth.items()},
+        "mark_price": mark,
+        "quantity": qty,
+        "account_id": account_id,
+        "symbol_id": symbol_id,
+        "raw_sodex_response": resp,
+    }
+
+
 @router.post("/reset")
 async def reset_ledger() -> dict:
     """Wipe the local paper-trading ledger. Handy for demos."""
