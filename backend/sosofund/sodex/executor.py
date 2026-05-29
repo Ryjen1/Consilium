@@ -160,11 +160,22 @@ async def sodex_execute(state: FundState) -> FundState:
     Also persists to the SQLite ledger so the UI remains consistent with
     paper mode. Each ledger row's rationale includes the SoDEX orderID.
     """
+    try:
+        return await _sodex_execute_inner(state)
+    except Exception as e:
+        log.error("sodex_execute_crashed", error=str(e), exc_info=True)
+        return {
+            **state,
+            "errors": list(state.get("errors", []))
+            + [f"SoDEX executor crashed: {type(e).__name__}: {e}"],
+        }
+
+
+async def _sodex_execute_inner(state: FundState) -> FundState:
     from ..execution.ledger import Decision, LedgerTrade, get_session
 
     s = get_settings()
     if not s.sodex_execution_ready:
-        # Return cleanly so the API can surface a structured error rather than 500.
         return {
             **state,
             "errors": list(state.get("errors", []))
