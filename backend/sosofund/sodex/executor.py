@@ -125,8 +125,12 @@ async def _build_order_params(
         "side": side,
         "type": TYPE_LIMIT,
         "timeInForce": TIF_IOC,
-        "price": format(limit_price, "f"),
-        "quantity": format(qty.normalize(), "f"),
+        # SoDEX rejects prices with trailing decimals for zero-precision
+        # symbols (e.g. BTC-USD pricePrecision=0). Use str(normalize())
+        # to strip unnecessary zeros: Decimal('73305') -> "73305",
+        # Decimal('2340.5') -> "2340.5".
+        "price": str(limit_price.normalize()),
+        "quantity": str(qty.normalize()),
         "reduceOnly": False,
         "positionSide": POSITION_SIDE_ONE_WAY,
     }
