@@ -186,7 +186,6 @@ async def _sodex_execute_inner(state: FundState) -> FundState:
     signals = state.get("signals", []) or []
     account_id = s.sodex_perps_account_id or 0
     cycle_id = uuid.uuid4().hex[:12]
-    session_id = state.get("session_id") or ""
 
     client = get_sodex_client()
 
@@ -262,7 +261,6 @@ async def _sodex_execute_inner(state: FundState) -> FundState:
         for sig in signals:
             session.add(
                 Decision(
-                    session_id=session_id,
                     cycle_id=cycle_id,
                     agent=sig.agent,
                     symbol=sig.symbol,
@@ -276,7 +274,6 @@ async def _sodex_execute_inner(state: FundState) -> FundState:
         for t in confirmed_trades:
             session.add(
                 LedgerTrade(
-                    session_id=session_id,
                     cycle_id=cycle_id,
                     symbol=t.symbol,
                     side=t.side,
