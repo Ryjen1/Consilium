@@ -27,3 +27,7 @@ class FundState(TypedDict, total=False):
     trades: list[Trade]
     errors: list[str]
     cycle_id: str
+    # Debug fields set by the SoDEX executor and surfaced by the API.
+    # Not used in the pipeline logic — purely diagnostic.
+    _sodex_debug: dict
+    _debug_sodex_responses: list[dict]

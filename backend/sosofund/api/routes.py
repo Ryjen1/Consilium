@@ -85,7 +85,7 @@ async def run(req: RunRequest) -> dict[str, Any]:
         portfolio_value_usd=req.portfolio_value_usd,
         mode=mode,  # type: ignore[arg-type]
     )
-    return {
+    resp: dict[str, Any] = {
         "cycle_id": final.get("cycle_id"),
         "mode": mode,
         "universe": final.get("universe"),
@@ -94,6 +94,12 @@ async def run(req: RunRequest) -> dict[str, Any]:
         "trades": [t.model_dump(mode="json") for t in final.get("trades", [])],
         "errors": final.get("errors", []),
     }
+    # Surface SoDEX debug info when in sodex mode — these fields are
+    # set by the executor and pass through the LangGraph state.
+    for debug_key in ("_sodex_debug", "_debug_sodex_responses"):
+        if val := final.get(debug_key):
+            resp[debug_key] = val
+    return resp
 
 
 @router.get("/decisions")
