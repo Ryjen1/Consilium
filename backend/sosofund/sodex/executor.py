@@ -195,17 +195,30 @@ async def _sodex_execute_inner(state: FundState) -> FundState:
     from ..execution.ledger import Decision, LedgerTrade, get_session
 
     s = get_settings()
-    if not s.sodex_execution_ready:
-        return {
-            **state,
-            "errors": list(state.get("errors", []))
-            + ["SoDEX execution requested but credentials are not configured."],
-        }
-
     trades = state.get("trades", []) or []
     signals = state.get("signals", []) or []
     account_id = s.sodex_perps_account_id or 0
     cycle_id = uuid.uuid4().hex[:12]
+
+    # Debug: surface exactly what the executor sees
+    _debug_info = {
+        "execution_ready": s.sodex_execution_ready,
+        "evm_address_set": bool(s.sodex_evm_address),
+        "evm_key_set": bool(s.sodex_evm_private_key),
+        "account_id": account_id,
+        "trades_in": len(trades),
+        "signals_in": len(signals),
+        "trades": [t.symbol for t in trades],
+    }
+
+    if not s.sodex_execution_ready:
+        _debug_info["early_exit"] = "credentials not configured"
+        return {
+            **state,
+            "errors": list(state.get("errors", []))
+            + ["SoDEX execution requested but credentials are not configured."],
+            "_sodex_debug": _debug_info,
+        }
 
     client = get_sodex_client()
 
@@ -323,12 +336,13 @@ async def _sodex_execute_inner(state: FundState) -> FundState:
         attempted=len(trades),
         errors=len(errors),
     )
-    # Debug: include raw SoDEX responses in the API response so the caller
-    # can inspect what SoDEX actually returned for each order.
+    _debug_info["confirmed_trades"] = len(confirmed_trades)
+    _debug_info["attempted"] = len(trades)
     return {
         **state,
         "cycle_id": cycle_id,
         "errors": errors,
+        "_sodex_debug": _debug_info,
         "_debug_sodex_responses": [
             {"symbol": ex["symbol"], "response": ex["response"], "params": ex.get("params")}
             for ex in executed
