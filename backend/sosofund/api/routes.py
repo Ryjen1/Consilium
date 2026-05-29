@@ -334,19 +334,25 @@ async def sodex_test_order() -> dict[str, Any]:
     qty_precision = int(btc["quantityPrecision"])
     price_precision = int(btc["pricePrecision"])
 
-    # Get current mark price
+    # Get current bid/ask/mark prices
     tickers = await client.perps_tickers("BTC-USD")
     if not tickers:
         return {"error": "No BTC-USD ticker"}
-    mark = float(tickers[0].get("markPrice") or tickers[0].get("lastPx") or 0)
+    t = tickers[0]
+    bid = float(t.get("bidPx") or 0)
+    ask = float(t.get("askPx") or 0)
+    mark = float(t.get("markPrice") or t.get("lastPx") or 0)
     if mark <= 0:
         return {"error": f"Invalid mark price: {mark}"}
+    # Fall back to mark if bid/ask not set
+    if bid <= 0: bid = mark
+    if ask <= 0: ask = mark
 
     # Calculate qty: $15 notional / mark price, rounded to step size
     qty = 15.0 / mark
-    # Round down to step_size precision
     qty = round(qty - (qty % step_size), qty_precision)
-    price = round(mark, price_precision)
+    # Sell order: quote at the bid (aggressive side of spread)
+    price = round(bid, price_precision)
 
     params = {
         "accountID": account_id,

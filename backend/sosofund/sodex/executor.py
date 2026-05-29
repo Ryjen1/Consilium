@@ -87,13 +87,15 @@ def _round_step(value: Decimal, step: Decimal) -> Decimal:
 
 
 async def _build_order_params(
-    symbol: str, side_usd: float, account_id: int, mark_price: Decimal
+    symbol: str, side_usd: float, account_id: int,
+    bid: Decimal, ask: Decimal, mark: Decimal,
 ) -> dict[str, Any]:
     """Build the `params` object for a perps newOrder (Limit+IOC at market).
 
     SoDEX requires Limit orders (type=1) rather than bare Market orders.
-    Using Limit+IOC at the current mark price gives equivalent fill
-    behavior while passing SoDEX's order-type validation.
+    We quote at bid for sells and ask for buys — the mark price sits
+    between them and has no counterparty, so IOC orders at mark get
+    cancelled instantly on thin books.
     """
     sodex_sym = UNIVERSE_TO_PERPS.get(symbol.upper())
     if not sodex_sym:
@@ -105,30 +107,29 @@ async def _build_order_params(
     qty_precision = int(meta["quantityPrecision"])
     price_precision = int(meta["pricePrecision"])
 
-    qty = Decimal(str(abs(side_usd))) / mark_price
+    # Size in base units from the notional and mark price.
+    qty = Decimal(str(abs(side_usd))) / mark
     qty = _round_step(qty, step_size)
     qty = qty.quantize(Decimal(10) ** -qty_precision)
     if qty <= 0:
         raise ValueError(
-            f"Computed quantity <= 0 for {symbol} at mark {mark_price} with notional ${side_usd}"
+            f"Computed qty <= 0 for {symbol} at mark {mark} notional ${side_usd}"
         )
 
-    # Limit price: use mark_price for buys, mark_price for sells.
-    # The IOC TIF ensures it fills immediately at best available price.
-    limit_price = mark_price.quantize(Decimal(10) ** -price_precision)
-
+    # Price on the aggressive side of the spread so IOC fills.
     side = SIDE_BUY if side_usd > 0 else SIDE_SELL
+    limit_price = (ask if side == SIDE_BUY else bid).quantize(
+        Decimal(10) ** -price_precision
+    )
+
     order_item = {
-        # Field order must match PerpsOrderItem in sodex-go-sdk-public.
+        # Field order matches PerpsOrderItem in sodex-go-sdk-public.
         "clOrdID": _new_cl_ord_id(),
         "modifier": MODIFIER_NONE,
         "side": side,
         "type": TYPE_LIMIT,
         "timeInForce": TIF_IOC,
-        # SoDEX rejects prices with trailing decimals for zero-precision
-        # symbols (e.g. BTC-USD pricePrecision=0). Use str(normalize())
-        # to strip unnecessary zeros: Decimal('73305') -> "73305",
-        # Decimal('2340.5') -> "2340.5".
+        # str(normalize()) strips trailing zeros: 73305.000000 -> 73305
         "price": str(limit_price.normalize()),
         "quantity": str(qty.normalize()),
         "reduceOnly": False,
@@ -146,16 +147,31 @@ def _new_cl_ord_id() -> str:
     return "ssf-" + uuid.uuid4().hex[:20]
 
 
-async def _current_mark_price(sodex_symbol: str) -> Decimal:
+async def _get_quote_prices(sodex_symbol: str) -> tuple[Decimal, Decimal, Decimal]:
+    """Return (bid, ask, mark) for a symbol.
+
+    Used by the executor to quote on the correct side of the spread:
+    - Buy  orders: use askPx (what you'd pay)
+    - Sell orders: use bidPx (what you'd receive)
+    Using the mark price for limit+IOC orders often fails because
+    there's no counterparty at that level.
+    """
     client = get_sodex_client()
     tickers = await client.perps_tickers(sodex_symbol)
     if not tickers:
         raise RuntimeError(f"No ticker for {sodex_symbol}")
     t = tickers[0]
-    for k in ("markPrice", "indexPrice", "lastPx"):
-        if v := t.get(k):
-            return Decimal(str(v))
-    raise RuntimeError(f"Ticker missing mark price for {sodex_symbol}")
+    bid = Decimal(str(t.get("bidPx") or 0))
+    ask = Decimal(str(t.get("askPx") or 0))
+    mark = Decimal(str(t.get("markPrice") or t.get("indexPrice") or t.get("lastPx") or 0))
+    if mark <= 0:
+        raise RuntimeError(f"Ticker missing mark price for {sodex_symbol}")
+    # If bid/ask aren't set, fall back to mark
+    if bid <= 0:
+        bid = mark
+    if ask <= 0:
+        ask = mark
+    return bid, ask, mark
 
 
 async def sodex_execute(state: FundState) -> FundState:
@@ -205,8 +221,8 @@ async def _sodex_execute_inner(state: FundState) -> FundState:
             if not sodex_sym:
                 errors.append(f"{t.symbol}: not whitelisted for SoDEX")
                 continue
-            mark = await _current_mark_price(sodex_sym)
-            params = await _build_order_params(t.symbol, signed_notional, account_id, mark)
+            bid, ask, mark = await _get_quote_prices(sodex_sym)
+            params = await _build_order_params(t.symbol, signed_notional, account_id, bid, ask, mark)
             auth, nonce = make_auth_headers("perps", "newOrder", params)
             log.info(
                 "sodex_place_order",
