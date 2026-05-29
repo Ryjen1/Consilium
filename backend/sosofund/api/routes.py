@@ -94,9 +94,22 @@ async def run(req: RunRequest) -> dict[str, Any]:
         "trades": [t.model_dump(mode="json") for t in final.get("trades", [])],
         "errors": final.get("errors", []),
     }
-    # Surface SoDEX debug info when in sodex mode — these fields are
-    # set by the executor and pass through the LangGraph state.
-    for debug_key in ("_sodex_debug", "_debug_sodex_responses"):
+    # Surface SoDEX execution diagnostics so the caller can see exactly
+    # what the executor saw. LangGraph strips custom keys from state, so
+    # we build the debug dict here from settings rather than trying to
+    # thread it through the pipeline.
+    if mode.startswith("sodex"):
+        resp["_sodex_debug"] = {
+            "execution_ready": s.sodex_execution_ready,
+            "evm_address_set": bool(s.sodex_evm_address),
+            "evm_key_set": bool(s.sodex_evm_private_key),
+            "account_id": s.sodex_perps_account_id,
+            "network": s.sodex_network,
+            "trades_count": len(resp["trades"]),
+            "signals_count": len(resp["signals"]),
+            "errors_count": len(resp["errors"]),
+        }
+    for debug_key in ("_debug_sodex_responses",):
         if val := final.get(debug_key):
             resp[debug_key] = val
     return resp
