@@ -231,18 +231,21 @@ async def _sodex_execute_inner(state: FundState) -> FundState:
                 sodex_symbol=sodex_sym,
                 side=t.side,
                 size_usd=size_usd,
+                bid=str(bid),
+                ask=str(ask),
                 mark=str(mark),
+                price=params["orders"][0]["price"],
                 qty=params["orders"][0]["quantity"],
                 nonce=nonce,
             )
             resp = await client.perps_place_orders(params, auth)
+            executed.append({"symbol": t.symbol, "response": resp, "params": params})
             log.info(
                 "sodex_raw_response",
                 cycle_id=cycle_id,
                 symbol=t.symbol,
                 response=str(resp)[:500],
             )
-            executed.append({"symbol": t.symbol, "response": resp})
             # SoDEX returns two layers of status:
             #   envelope: { code, message, data: [...] }
             #   per-order: data[i] = { code, orderID?, error? }
@@ -327,7 +330,7 @@ async def _sodex_execute_inner(state: FundState) -> FundState:
         "cycle_id": cycle_id,
         "errors": errors,
         "_debug_sodex_responses": [
-            {"symbol": ex["symbol"], "response": ex["response"]}
+            {"symbol": ex["symbol"], "response": ex["response"], "params": ex.get("params")}
             for ex in executed
         ],
     }
