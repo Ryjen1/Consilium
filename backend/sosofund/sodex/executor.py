@@ -179,6 +179,7 @@ async def sodex_execute(state: FundState) -> FundState:
     client = get_sodex_client()
 
     executed: list[dict] = []
+    confirmed_trades = []  # only trades that actually landed on SoDEX
     errors: list[str] = list(state.get("errors", []))
 
     for t in trades:
@@ -211,6 +212,7 @@ async def sodex_execute(state: FundState) -> FundState:
             # We treat anything other than envelope.code == 0 AND every
             # per-order code == 0 as a failure for this symbol.
             envelope_code = resp.get("code") if isinstance(resp, dict) else None
+            any_filled = False
             if envelope_code not in (0, None):
                 errors.append(
                     f"{t.symbol}: sodex envelope {envelope_code} "
@@ -226,6 +228,7 @@ async def sodex_execute(state: FundState) -> FundState:
                             f"{od.get('error') or od.get('message')}"
                         )
                     else:
+                        any_filled = True
                         log.info(
                             "sodex_order_filled",
                             cycle_id=cycle_id,
@@ -233,15 +236,21 @@ async def sodex_execute(state: FundState) -> FundState:
                             orderID=od.get("orderID"),
                             clOrdID=od.get("clOrdID"),
                         )
+            # Only add to confirmed_trades if at least one order in the batch
+            # actually succeeded — not just because the HTTP call returned 200.
+            if any_filled:
+                confirmed_trades.append(t)
         except Exception as e:
             log.warning("sodex_order_failed", symbol=t.symbol, error=str(e))
             errors.append(f"{t.symbol}: {e}")
 
-    # Persist identical ledger rows to the paper executor so the UI works.
+    # Persist only trades that actually landed on SoDEX.
+    # Signals are always persisted (they happened regardless of fill).
     async with get_session() as session:
         for sig in signals:
             session.add(
                 Decision(
+                    session_id=session_id,
                     cycle_id=cycle_id,
                     agent=sig.agent,
                     symbol=sig.symbol,
@@ -252,9 +261,10 @@ async def sodex_execute(state: FundState) -> FundState:
                     generated_at=sig.generated_at,
                 )
             )
-        for t in trades:
+        for t in confirmed_trades:
             session.add(
                 LedgerTrade(
+                    session_id=session_id,
                     cycle_id=cycle_id,
                     symbol=t.symbol,
                     side=t.side,
@@ -271,7 +281,8 @@ async def sodex_execute(state: FundState) -> FundState:
         "sodex_cycle_complete",
         cycle_id=cycle_id,
         network=s.sodex_network,
-        placed=len(executed),
+        placed=len(confirmed_trades),
+        attempted=len(trades),
         errors=len(errors),
     )
     return {**state, "cycle_id": cycle_id, "errors": errors}
