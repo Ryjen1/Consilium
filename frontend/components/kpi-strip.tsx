@@ -39,8 +39,8 @@ export function KpiStrip({
     { label: "Gross Exposure", value: fmtUsd(gross), sub: "across universe" },
     {
       label: "Agents Active",
-      value: `${agents}/3`,
-      sub: health?.mock_mode || health?.soso_quota_exhausted ? "fallback mode" : "live feeds",
+      value: `${agents}`,
+      sub: health?.mock_mode || health?.soso_quota_exhausted ? "fallback mode" : `${agents} live feeds`,
     },
     {
       label: "Last Run",
