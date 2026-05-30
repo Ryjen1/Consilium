@@ -24,6 +24,7 @@ import { BookSizeInput } from "@/components/book-size-input";
 import { FirstRun } from "@/components/first-run";
 import { DecisionPanel } from "@/components/decision-panel";
 import { SectorIntel } from "@/components/sector-intel";
+import { OutcomeTracker } from "@/components/outcome-tracker";
 
 export default function Dashboard() {
   const [health, setHealth] = useState<Health | null>(null);
@@ -245,6 +246,8 @@ export default function Dashboard() {
             </section>
 
             <SectorIntel />
+
+            <OutcomeTracker />
 
             <section>
               <div className="flex items-center justify-between mb-2 px-1">
