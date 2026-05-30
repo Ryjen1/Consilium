@@ -22,8 +22,28 @@ function fmtAgents(agents: string[]): string {
         .replace("ETFFlow", "ETF")
         .replace("UnlockRisk", "UNL")
         .replace("KOLNarrative", "KOL")
+        .replace("Macro", "MCR")
     )
     .join(" · ");
+}
+
+function tradeMode(t: Trade): "paper" | "sodex" {
+  return t.rationale?.startsWith("[sodex:") ? "sodex" : "paper";
+}
+
+function MacroLabel({ mode }: { mode: "paper" | "sodex" }) {
+  return (
+    <span
+      className={clsx(
+        "pill border inline-flex items-center gap-1",
+        mode === "sodex"
+          ? "bg-long/10 text-long border-long/20"
+          : "bg-panel2 text-muted/70 border-border"
+      )}
+    >
+      {mode === "sodex" ? "SODEX" : "PAPER"}
+    </span>
+  );
 }
 
 export function DecisionLog({ trades }: { trades: Trade[] }) {
@@ -48,12 +68,13 @@ export function DecisionLog({ trades }: { trades: Trade[] }) {
           <table className="w-full">
             <thead className="sticky top-0 bg-panel2 border-b border-border">
               <tr className="label">
-                <th className="text-left px-4 py-2 font-normal">Time</th>
+                <th className="text-left px-3 py-2 font-normal">Time</th>
+                <th className="text-left px-2 py-2 font-normal">Mode</th>
                 <th className="text-left px-2 py-2 font-normal">Side</th>
                 <th className="text-left px-2 py-2 font-normal">Sym</th>
                 <th className="text-right px-2 py-2 font-normal">Size</th>
                 <th className="text-right px-2 py-2 font-normal">Conf</th>
-                <th className="text-left px-4 py-2 font-normal">Agents</th>
+                <th className="text-left px-3 py-2 font-normal">Agents</th>
               </tr>
             </thead>
             <tbody>
@@ -65,8 +86,11 @@ export function DecisionLog({ trades }: { trades: Trade[] }) {
                     i % 2 === 1 && "bg-panel2/20"
                   )}
                 >
-                  <td className="px-4 py-2 mono text-[11px] text-muted">
+                  <td className="px-3 py-2 mono text-[11px] text-muted">
                     {fmtTime(t.executed_at)}
+                  </td>
+                  <td className="px-2 py-2">
+                    <MacroLabel mode={tradeMode(t)} />
                   </td>
                   <td className="px-2 py-2">
                     <span
@@ -80,14 +104,19 @@ export function DecisionLog({ trades }: { trades: Trade[] }) {
                       {t.side}
                     </span>
                   </td>
-                  <td className="px-2 py-2 mono text-sm font-semibold">{t.symbol}</td>
+                  <td className="px-2 py-2 mono text-sm font-semibold">
+                    {t.symbol}
+                  </td>
                   <td className="px-2 py-2 mono text-sm text-right">
-                    ${t.size_usd.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    $
+                    {t.size_usd.toLocaleString(undefined, {
+                      maximumFractionDigits: 0,
+                    })}
                   </td>
                   <td className="px-2 py-2 mono text-sm text-right text-brand2">
                     {Math.round(t.confidence * 100)}%
                   </td>
-                  <td className="px-4 py-2 mono text-[11px] text-muted">
+                  <td className="px-3 py-2 mono text-[11px] text-muted">
                     {fmtAgents(t.agents)}
                   </td>
                 </tr>

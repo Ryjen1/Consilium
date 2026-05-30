@@ -220,6 +220,62 @@ async def sodex_tickers() -> list[dict]:
     return out
 
 
+@router.get("/sodex/balance")
+async def sodex_balance() -> dict[str, Any]:
+    """Real SoDEX account state — balance, margin, open positions.
+
+    Proxies the SoDEX REST API through the backend so the frontend
+    doesn't hit CORS on testnet-gw.sodex.dev. Returns empty dict when
+    no EVM address is configured (paper mode).
+    """
+    s = get_settings()
+    if not s.sodex_evm_address:
+        return {"available": 0, "collateral": 0, "total": 0, "positions": []}
+
+    client = get_sodex_client()
+    addr = s.sodex_evm_address
+    account_id = s.sodex_perps_account_id
+
+    try:
+        state = await client._get(
+            f"/accounts/{addr}/state",
+            params={"accountID": account_id} if account_id else None,
+        )
+    except Exception:
+        return {"available": 0, "collateral": 0, "total": 0, "positions": []}
+
+    if not isinstance(state, dict):
+        return {"available": 0, "collateral": 0, "total": 0, "positions": []}
+
+    balance = state.get("B") or []
+    bal = balance[0] if isinstance(balance, list) and balance else {}
+    positions_raw = state.get("P") or []
+    positions: list[dict] = []
+    for p in positions_raw:
+        if not isinstance(p, dict):
+            continue
+        sz = float(p.get("sz") or 0)
+        if sz == 0:
+            continue
+        positions.append(
+            {
+                "symbol": p.get("s", ""),
+                "size": sz,
+                "side": "long" if sz > 0 else "short",
+                "entry_price": float(p.get("ep") or 0),
+                "unrealized_pnl": float(p.get("ur") or 0),
+                "notional": abs(sz) * float(p.get("ep") or 0),
+            }
+        )
+
+    return {
+        "available": float(state.get("am") or 0),
+        "collateral": float(state.get("cm") or 0),
+        "total": float(state.get("av") or 0),
+        "positions": positions,
+    }
+
+
 @router.get("/sectors")
 async def sectors() -> list[dict]:
     """Live sector snapshot from SoSoValue's sector-spotlight endpoint."""

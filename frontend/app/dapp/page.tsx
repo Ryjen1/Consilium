@@ -25,6 +25,7 @@ import { FirstRun } from "@/components/first-run";
 import { DecisionPanel } from "@/components/decision-panel";
 import { SectorIntel } from "@/components/sector-intel";
 import { OutcomeTracker } from "@/components/outcome-tracker";
+import { SodexBalanceCard } from "@/components/sodex-balance-card";
 
 export default function Dashboard() {
   const [health, setHealth] = useState<Health | null>(null);
@@ -210,7 +211,19 @@ export default function Dashboard() {
               SoSoValue Buildathon submission
             </span>
           </div>
-          <BookSizeInput value={portfolioUsd} onChange={setPortfolioUsd} />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1">
+              <BookSizeInput value={portfolioUsd} onChange={setPortfolioUsd} />
+              {mode.startsWith("sodex") && portfolioUsd > 0 && (
+                <p className="text-[11px] text-muted px-1">
+                  In testnet mode, orders are sized against your real
+                  SoDEX margin, not this value. Paper mode uses this
+                  number as the hypothetical book size.
+                </p>
+              )}
+            </div>
+            <SodexBalanceCard />
+          </div>
         </section>
 
         {hasRunBefore ? (
