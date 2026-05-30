@@ -6,22 +6,19 @@ math stays proportional.
 
 Two guards:
 
-- **MIN_NOTIONAL_USD** ($15) — positions below this are skipped, not
+- **MIN_NOTIONAL_USD** ($10) — positions below this are skipped, not
   emitted as a dust trade the exchange will reject. SoDEX perps min
-  notional varies by symbol (ETH-USD is $10); $15 clears the highest
-  minimum comfortably.
+  notional is $10 across all major pairs.
 
-- **MIN_PORTFOLIO_USD** ($50) — below this, the agent can't meaningfully
-  allocate any position at Wave 1's 5% per-name cap ($2.50 / position).
-  We emit no trades and surface the reason as an error so the UI can
-  tell the user "deposit more to start trading."
+- **MIN_PORTFOLIO_USD** ($25) — below this, the agent can't meaningfully
+  allocate any position at Wave 1's 5% per-name cap.
 """
 from __future__ import annotations
 
 from .state import FundState, Trade
 
-MIN_NOTIONAL_USD = 15.0
-MIN_PORTFOLIO_USD = 50.0
+MIN_NOTIONAL_USD = 10.0
+MIN_PORTFOLIO_USD = 25.0
 
 
 async def portfolio_manager(state: FundState) -> FundState:
