@@ -94,24 +94,6 @@ async def run(req: RunRequest) -> dict[str, Any]:
         "trades": [t.model_dump(mode="json") for t in final.get("trades", [])],
         "errors": final.get("errors", []),
     }
-    # Surface SoDEX execution diagnostics so the caller can see exactly
-    # what the executor saw. LangGraph strips custom keys from state, so
-    # we build the debug dict here from settings rather than trying to
-    # thread it through the pipeline.
-    if mode.startswith("sodex"):
-        resp["_sodex_debug"] = {
-            "execution_ready": s.sodex_execution_ready,
-            "evm_address_set": bool(s.sodex_evm_address),
-            "evm_key_set": bool(s.sodex_evm_private_key),
-            "account_id": s.sodex_perps_account_id,
-            "network": s.sodex_network,
-            "trades_count": len(resp["trades"]),
-            "signals_count": len(resp["signals"]),
-            "errors_count": len(resp["errors"]),
-        }
-    for debug_key in ("_debug_sodex_responses",):
-        if val := final.get(debug_key):
-            resp[debug_key] = val
     return resp
 
 
@@ -317,92 +299,6 @@ async def markets() -> list[dict]:
         except Exception:
             continue
     return out
-
-
-@router.post("/sodex/test-order")
-async def sodex_test_order() -> dict[str, Any]:
-    """Send a minimal signed order to SoDEX testnet to verify the signing
-    path works end-to-end.
-
-    Bypasses the agent pipeline entirely. Sends a single BTC sell order
-    for $15 notional (well above minNotional). Returns the raw SoDEX
-    response so we can inspect exactly what SoDEX says.
-
-    DELETE THIS ENDPOINT before Wave 2 submission.
-    """
-    from ..sodex.client import get_sodex_client
-    from ..sodex.signer import make_auth_headers
-    from ..graph.state import Trade
-    from datetime import datetime, timezone
-
-    s = get_settings()
-    if not s.sodex_execution_ready:
-        return {"error": "SoDEX credentials not configured"}
-
-    client = get_sodex_client()
-    account_id = s.sodex_perps_account_id or 0
-
-    # Resolve BTC-USD symbol metadata
-    syms = await client.perps_symbols()
-    btc = next((x for x in syms if x.get("name") == "BTC-USD"), None)
-    if not btc:
-        return {"error": "BTC-USD not found on SoDEX"}
-
-    symbol_id = int(btc["id"])
-    step_size = float(btc["stepSize"])
-    qty_precision = int(btc["quantityPrecision"])
-    price_precision = int(btc["pricePrecision"])
-
-    # Get current bid/ask/mark prices
-    tickers = await client.perps_tickers("BTC-USD")
-    if not tickers:
-        return {"error": "No BTC-USD ticker"}
-    t = tickers[0]
-    bid = float(t.get("bidPx") or 0)
-    ask = float(t.get("askPx") or 0)
-    mark = float(t.get("markPrice") or t.get("lastPx") or 0)
-    if mark <= 0:
-        return {"error": f"Invalid mark price: {mark}"}
-    # Fall back to mark if bid/ask not set
-    if bid <= 0: bid = mark
-    if ask <= 0: ask = mark
-
-    # Calculate qty: $15 notional / mark price, rounded to step size
-    qty = 15.0 / mark
-    qty = round(qty - (qty % step_size), qty_precision)
-    # Sell order: quote at the bid (aggressive side of spread)
-    price = round(bid, price_precision)
-
-    params = {
-        "accountID": account_id,
-        "symbolID": symbol_id,
-        "orders": [{
-            "clOrdID": f"test-{int(datetime.now(tz=timezone.utc).timestamp())}",
-            "modifier": 1,
-            "side": 2,  # SELL
-            "type": 1,  # LIMIT
-            "timeInForce": 3,  # IOC
-            "price": str(int(price)) if price_precision == 0 else str(price),
-            "quantity": str(int(qty)) if qty_precision == 0 else str(qty),
-            "reduceOnly": False,
-            "positionSide": 1,
-        }],
-    }
-
-    auth, nonce = make_auth_headers("perps", "newOrder", params)
-
-    resp = await client.perps_place_orders(params, auth)
-
-    return {
-        "order_params": params,
-        "nonce": nonce,
-        "auth_headers": {k: v[:20] + "..." if len(v) > 20 else v for k, v in auth.items()},
-        "mark_price": mark,
-        "quantity": qty,
-        "account_id": account_id,
-        "symbol_id": symbol_id,
-        "raw_sodex_response": resp,
-    }
 
 
 @router.post("/reset")

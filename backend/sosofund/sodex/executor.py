@@ -200,24 +200,11 @@ async def _sodex_execute_inner(state: FundState) -> FundState:
     account_id = s.sodex_perps_account_id or 0
     cycle_id = uuid.uuid4().hex[:12]
 
-    # Debug: surface exactly what the executor sees
-    _debug_info = {
-        "execution_ready": s.sodex_execution_ready,
-        "evm_address_set": bool(s.sodex_evm_address),
-        "evm_key_set": bool(s.sodex_evm_private_key),
-        "account_id": account_id,
-        "trades_in": len(trades),
-        "signals_in": len(signals),
-        "trades": [t.symbol for t in trades],
-    }
-
     if not s.sodex_execution_ready:
-        _debug_info["early_exit"] = "credentials not configured"
         return {
             **state,
             "errors": list(state.get("errors", []))
             + ["SoDEX execution requested but credentials are not configured."],
-            "_sodex_debug": _debug_info,
         }
 
     client = get_sodex_client()
@@ -252,18 +239,16 @@ async def _sodex_execute_inner(state: FundState) -> FundState:
                 nonce=nonce,
             )
             resp = await client.perps_place_orders(params, auth)
-            executed.append({"symbol": t.symbol, "response": resp, "params": params})
+            executed.append({"symbol": t.symbol, "response": resp})
             log.info(
-                "sodex_raw_response",
+                "sodex_order_attempt",
                 cycle_id=cycle_id,
                 symbol=t.symbol,
-                response=str(resp)[:500],
+                code=resp.get("code") if isinstance(resp, dict) else None,
             )
             # SoDEX returns two layers of status:
             #   envelope: { code, message, data: [...] }
             #   per-order: data[i] = { code, orderID?, error? }
-            # We treat anything other than envelope.code == 0 AND every
-            # per-order code == 0 as a failure for this symbol.
             envelope_code = resp.get("code") if isinstance(resp, dict) else None
             any_filled = False
             if envelope_code not in (0, None):
@@ -336,15 +321,8 @@ async def _sodex_execute_inner(state: FundState) -> FundState:
         attempted=len(trades),
         errors=len(errors),
     )
-    _debug_info["confirmed_trades"] = len(confirmed_trades)
-    _debug_info["attempted"] = len(trades)
     return {
         **state,
         "cycle_id": cycle_id,
         "errors": errors,
-        "_sodex_debug": _debug_info,
-        "_debug_sodex_responses": [
-            {"symbol": ex["symbol"], "response": ex["response"], "params": ex.get("params")}
-            for ex in executed
-        ],
     }
