@@ -211,31 +211,22 @@ class SoSoValueClient:
                 _cache.set(key, data)
                 return data
             except httpx.HTTPStatusError as e:
-                # Fall through to mock fallback for auth failures (401) and
-                # rate limits (429); re-raise all other 4xx client errors.
-                if e.response.status_code in (401, 429):
-                    # Latch immediately so the NEXT call skips the retry loop.
-                    if get_settings().soso_mock_on_quota_exhausted:
-                        if not self._quota_exhausted:
-                            log.warning("soso_auth_failed_falling_back_to_mock", path=path, status=e.response.status_code)
-                        self._quota_exhausted = True
-                        return _mock_response(path, params)
-                if 400 <= e.response.status_code < 500 and e.response.status_code not in (401, 429):
+                if 400 <= e.response.status_code < 500 and e.response.status_code != 429:
                     raise
                 last_exc = e
             except httpx.HTTPError as e:
                 last_exc = e
             await asyncio.sleep(backoff_base * (2 ** i))
-        # Exhausted retries. If the failure is auth (401) or rate-limit (429)
-        # and fallback is enabled, serve a mock so agents can still produce
-        # signals. Latch the state so subsequent calls skip the retry dance.
+        # Exhausted retries. If the failure is a 429 rate-limit and fallback is
+        # enabled, serve a mock so agents can still produce signals. Latch the
+        # state so subsequent calls skip the retry dance.
         if (
             isinstance(last_exc, httpx.HTTPStatusError)
-            and last_exc.response.status_code in (401, 429)
+            and last_exc.response.status_code == 429
             and get_settings().soso_mock_on_quota_exhausted
         ):
             if not self._quota_exhausted:
-                log.warning("soso_fallback_to_mock_after_retries", path=path, status=last_exc.response.status_code)
+                log.warning("soso_fallback_to_mock_after_retries", path=path)
             self._quota_exhausted = True
             return _mock_response(path, params)
         if last_exc is None:
@@ -314,17 +305,6 @@ def _mock_response(path: str, params: dict[str, Any]) -> Any:
 
     if path == "/currencies":
         return _UNIVERSE
-
-    if path == "/currencies/sector-spotlight":
-        sectors = [
-            {"name": "DeFi", "change_pct_24h": round(rng.uniform(-0.05, 0.08), 4), "marketcap_dom": round(rng.uniform(0.02, 0.12), 4)},
-            {"name": "Layer 1", "change_pct_24h": round(rng.uniform(-0.03, 0.06), 4), "marketcap_dom": round(rng.uniform(0.15, 0.35), 4)},
-            {"name": "Layer 2", "change_pct_24h": round(rng.uniform(-0.04, 0.07), 4), "marketcap_dom": round(rng.uniform(0.03, 0.08), 4)},
-            {"name": "AI & Data", "change_pct_24h": round(rng.uniform(-0.06, 0.10), 4), "marketcap_dom": round(rng.uniform(0.01, 0.05), 4)},
-            {"name": "Meme", "change_pct_24h": round(rng.uniform(-0.10, 0.15), 4), "marketcap_dom": round(rng.uniform(0.01, 0.04), 4)},
-            {"name": "RWA", "change_pct_24h": round(rng.uniform(-0.03, 0.05), 4), "marketcap_dom": round(rng.uniform(0.005, 0.03), 4)},
-        ]
-        return {"sector": sectors}
 
     if path.endswith("/market-snapshot"):
         base = rng.uniform(0.5, 70000)
@@ -453,34 +433,6 @@ def _mock_response(path: str, params: dict[str, Any]) -> Any:
                 }
             )
         return out
-
-    if path == "/macro/events":
-        _now = datetime.now(tz=timezone.utc)
-        events = []
-        # Generate some upcoming macro events within the next 7 days
-        for i in range(3):
-            ev_date = _now + timedelta(days=rng.randint(1, 7))
-            events.append({
-                "date": ev_date.strftime("%Y-%m-%d"),
-                "events": rng.sample(
-                    ["CPI (MoM)", "Core CPI (MoM)", "Nonfarm Payrolls",
-                     "FOMC Rate Decision", "Retail Sales (MoM)"],
-                    k=rng.randint(1, 3),
-                ),
-            })
-        return events
-
-    if path.startswith("/macro/events/") and path.endswith("/history"):
-        # Return realistic actual vs forecast residuals
-        _now = datetime.now(tz=timezone.utc)
-        return [
-            {
-                "date": (_now - timedelta(days=i * 30)).strftime("%Y-%m-%d"),
-                "actual": f"{rng.uniform(0.1, 0.4):.1f}%",
-                "forecast": f"{rng.uniform(0.1, 0.4):.1f}%",
-            }
-            for i in range(3)
-        ]
 
     if path == "/news":
         items = []
