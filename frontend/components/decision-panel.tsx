@@ -70,7 +70,7 @@ function consensusExplanation(
     return `${a} and ${b} reached the same direction looking at independent data sources. Sized at the full per-name cap.`;
   }
   // super_majority
-  return `All three agents agreed on direction. Sized at 1.25× the per-name cap as a consensus bonus.`;
+  return `All four agents agreed on direction. Sized at 1.25× the per-name cap as a consensus bonus.`;
 }
 
 export function DecisionPanel({

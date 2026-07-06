@@ -10,8 +10,8 @@ Risk regime classification:
     risk-off — recent CPI/Fed surprises skew hawkish, or labor weakening
     neutral  — mixed signals or no major event in the window
 
-For now the signal is event-driven (only fires within 48h of a major event).
-Wave 3 can expand this to continuous regime classification.
+    For now the signal is event-driven (only fires within 48h of a major event).
+    Future work can expand this to continuous regime classification.
 """
 from __future__ import annotations
 
@@ -114,7 +114,7 @@ class MacroAgent(Agent):
 
             # For CPI / inflation metrics: actual > forecast = hawkish = risk-off
             # For employment: actual > forecast = strong labor = risk-on (ambiguous)
-            # Simplified heuristic for Wave 2:
+            # Simplified heuristic:
             if "CPI" in event_name or "Core" in event_name:
                 if residual > 0:
                     risk_score -= 0.3  # hawkish

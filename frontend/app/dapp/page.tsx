@@ -203,7 +203,7 @@ export default function Dashboard() {
         <section className="flex flex-col gap-3">
           <div className="flex items-baseline justify-between px-1">
             <h1 className="text-xl font-semibold tracking-tight">
-              A council of analysts trading{" "}
+              A council of 4 analysts trading{" "}
               <span className="text-brand">SoSoValue</span> signals onto{" "}
               <span className="text-brand">SoDEX</span>
             </h1>

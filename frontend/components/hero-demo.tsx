@@ -23,24 +23,24 @@ const FALLBACK: Record<Symbol, DemoResult> = {
     symbol: "BTC",
     direction: "long",
     confidence: 0.6,
-    rationale:
-      "Placeholder — when live, the ETF Flow, Unlock Risk, and KOL Narrative agents each analyze their own SoSoValue primitive for BTC and a risk manager arbitrates the combined signal.",
+      rationale:
+        "Placeholder — when live, the ETF Flow, Unlock Risk, KOL Narrative, and Macro agents each analyze their own SoSoValue primitive for BTC and a risk manager arbitrates the combined signal.",
     source: "fallback",
   },
   ETH: {
     symbol: "ETH",
     direction: "flat",
     confidence: 0.5,
-    rationale:
-      "Placeholder — when live, opposing signals across the three agents would net to a flat position here, cancelled by the risk manager.",
+      rationale:
+        "Placeholder — when live, opposing signals across the four agents would net to a flat position here, cancelled by the risk manager.",
     source: "fallback",
   },
   SOL: {
     symbol: "SOL",
     direction: "long",
     confidence: 0.6,
-    rationale:
-      "Placeholder — when live, each agent contributes its own thesis (flows, unlocks, KOL activity) and the risk manager produces a single sized signal.",
+      rationale:
+        "Placeholder — when live, each agent contributes its own thesis (flows, unlocks, KOL activity, macro events) and the risk manager produces a single sized signal.",
     source: "fallback",
   },
 };
@@ -165,7 +165,7 @@ export function HeroDemo() {
         {!result && !loading && (
           <div className="text-sm text-muted flex items-center gap-2">
             <Minus className="w-4 h-4" />
-            Pick a symbol and run a cycle. The three agents will deliberate and
+            Pick a symbol and run a cycle. The four agents will deliberate and
             produce a sized signal in roughly three seconds.
           </div>
         )}

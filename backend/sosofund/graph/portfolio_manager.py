@@ -11,7 +11,7 @@ Two guards:
   notional is $10 across all major pairs.
 
 - **MIN_PORTFOLIO_USD** ($25) — below this, the agent can't meaningfully
-  allocate any position at Wave 1's 5% per-name cap.
+  allocate any position at the 5% per-name cap.
 """
 from __future__ import annotations
 

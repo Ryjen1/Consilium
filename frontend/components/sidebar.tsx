@@ -49,7 +49,7 @@ export function Sidebar() {
         })}
       </div>
       <div className="mt-auto text-[9px] uppercase tracking-[0.2em] text-muted/60 writing-mode-vertical pt-4 pb-2">
-        W1
+        W3
       </div>
     </aside>
   );

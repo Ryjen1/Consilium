@@ -47,9 +47,9 @@ export function ProofRow() {
     },
     {
       label: "Agents online",
-      value: `${agentCount}/3`,
-      ok: agentCount >= 3,
-      sub: "ETF Flow · Unlock · KOL",
+      value: `${agentCount}/4`,
+      ok: agentCount >= 4,
+      sub: "ETF Flow · Unlock · KOL · Macro",
     },
     {
       label: "Cycle time",

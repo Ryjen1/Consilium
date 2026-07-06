@@ -10,65 +10,65 @@ const STEPS = [
   {
     icon: Brain,
     title: "Agents read the market",
-    body: "Three specialized analysts read SoSoValue Terminal: ETF flows, token-unlock risk, and KOL narrative momentum.",
+    body: "Four specialized analysts read SoSoValue Terminal: ETF flows, token-unlock risk, KOL narrative momentum, and macro event positioning.",
   },
   {
     icon: Shield,
     title: "Risk manager sizes positions",
-    body: "Multi-agent signals are aggregated, opposing directions cancel, and every position is capped at 5% of book.",
+    body: "Multi-agent signals are aggregated via confidence-weighted voting, opposing directions cancel, and every position is capped at 5% of book.",
   },
   {
     icon: Network,
     title: "Portfolio manager routes trades",
-    body: "Sized targets become orders against a paper ledger or directly onto SoDEX testnet.",
+    body: "Sized targets become orders against a paper ledger or directly onto SoDEX testnet via EIP-712 signed transactions.",
   },
   {
     icon: Zap,
-    title: "SoDEX-ready executor",
-    body: "EIP-712 signer and perps executor wired end-to-end. Testnet fills activate in Wave 2 once a funded wallet is attached.",
+    title: "SoDEX executor",
+    body: "Real testnet fills on SoDEX perps. Limit+IOC orders at bid/ask with EIP-712 signing. Balance card shows live collateral.",
   },
 ];
 
 const FEATURES = [
   {
     title: "SoSoValue-native",
-    body: "8 Terminal endpoints in active use, the full 32-endpoint surface catalogued in the client.",
+    body: "8 Terminal endpoints in active use — ETF flows, token economics, macro events, news feed, market snapshots, and sector intel.",
   },
   {
-    title: "On-chain execution path",
-    body: "EIP-712 signer and SoDEX perps executor wired end-to-end. Wave 2 funds a wallet and activates live testnet fills.",
+    title: "On-chain execution",
+    body: "EIP-712 signer and SoDEX perps executor wired end-to-end. Testnet fills with live balance tracking and position management.",
   },
   {
-    title: "Research-to-execution loop",
-    body: "One click runs agents, risk, portfolio, and executor. Closes in about three seconds.",
+    title: "Multi-agent consensus",
+    body: "Confidence-weighted voting across 4 specialists. Solo, duo, and super-majority sizing with gross-exposure caps.",
   },
   {
     title: "Backtesting on real prices",
-    body: "30-day equity curve replayed on live SoDEX klines for BTC, ETH, SOL, XRP, AVAX.",
+    body: "30-day equity curve replayed on live SoDEX klines. Signal outcome tracker classifies HIT / STOP / DRIFT retroactively.",
   },
 ];
 
 const WAVES = [
   {
     q: "Wave 1",
-    tag: "Today",
-    title: "Shipped",
+    tag: "Shipped",
+    title: "Foundation",
     body: "3 agents, LangGraph pipeline, paper ledger, backtester, dashboard. EIP-712 signer and SoDEX testnet executor wired.",
     shipped: true,
   },
   {
     q: "Wave 2",
-    tag: "",
+    tag: "Shipped",
     title: "Live execution + more agents",
-    body: "Activate live SoDEX testnet fills. Macro, BTC Treasury, Sector Rotation agents. Limit orders, TP/SL, leverage.",
-    shipped: false,
+    body: "SoDEX testnet fills active. Macro and KOL Narrative agents. SoDEX balance card, outcome tracker, sector intel.",
+    shipped: true,
   },
   {
     q: "Wave 3",
-    tag: "",
-    title: "On-chain audit + UX pass",
-    body: "Every decision logged as a ValueChain tx. Full UX refinement: motion, mobile, onboarding, accessibility.",
-    shipped: false,
+    tag: "Shipped",
+    title: "Polish + UX pass",
+    body: "Full dashboard refinement: pipeline visualization, decision panel, PnL charts, book-size input, first-run onboarding.",
+    shipped: true,
   },
   {
     q: "Post-buildathon",
@@ -127,16 +127,17 @@ export default function Landing() {
         {/* Hero: outcome-first copy + single primary CTA that scrolls to a working demo. */}
         <section className="pt-16 md:pt-24 pb-10 flex flex-col items-center text-center gap-6">
           <div className="pill bg-brand/10 text-brand border border-brand/30">
-            SoSoValue Buildathon · Wave 1 live
+            SoSoValue Buildathon · Wave 3 submission
           </div>
           <h1 className="display text-4xl md:text-6xl lg:text-7xl max-w-4xl">
-            Three specialist agents.{" "}
+            Four specialist agents.{" "}
             <span className="text-brand">One sized trade.</span>
           </h1>
           <p className="text-base md:text-lg text-muted max-w-2xl leading-relaxed">
             <span className="text-text">ETF Flow</span>,{" "}
-            <span className="text-text">Unlock Risk</span>, and{" "}
-            <span className="text-text">KOL Narrative</span> agents debate
+            <span className="text-text">Unlock Risk</span>,{" "}
+            <span className="text-text">KOL Narrative</span>, and{" "}
+            <span className="text-text">Macro</span> agents debate
             SoSoValue data. A risk manager arbitrates. A portfolio manager
             emits one sized trade. Every cycle.
           </p>
@@ -289,7 +290,7 @@ export default function Landing() {
             Turn SoSoValue signals into on-chain trades.
           </h2>
           <p className="text-muted max-w-lg text-sm leading-relaxed">
-            Open Consilium, run one cycle, and watch three agents deliberate
+            Open Consilium, run one cycle, and watch four agents deliberate
             into a sized trade — on a paper ledger or directly on SoDEX testnet.
           </p>
           <Link

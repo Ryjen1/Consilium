@@ -5,7 +5,7 @@ const PREVIEW_STEPS = [
   {
     icon: Brain,
     label: "AGENTS",
-    body: "Three analysts read SoSoValue: ETF flow, token-unlock risk, KOL narrative.",
+    body: "Four analysts read SoSoValue: ETF flow, token-unlock risk, KOL narrative, and macro event positioning.",
   },
   {
     icon: Shield,
@@ -55,7 +55,7 @@ export function FirstRun({
           Run one cycle. Watch the council deliberate.
         </h2>
         <p className="text-sm text-muted leading-relaxed">
-          A cycle queries SoSoValue, runs three agents, sizes positions against
+          A cycle queries SoSoValue, runs four agents, sizes positions against
           a <span className="mono text-text">{bookLabel}</span> paper book, and
           posts the fills to the ledger below. Roughly three seconds end-to-end.
         </p>
