@@ -27,13 +27,20 @@ export function ProofRow() {
 
   const sosoLive =
     !!health && !health.mock_mode && !health.soso_quota_exhausted;
+  const sosoStateLabel = !health
+    ? "Connecting…"
+    : health.soso_quota_exhausted
+    ? "Quota Limit"
+    : health.mock_mode
+    ? "API Key Missing"
+    : "Live";
   const sodexReady = !!health?.sodex?.execution_ready;
   const agentCount = health?.agents.length ?? 3;
 
   const items = [
     {
       label: "SoSoValue Terminal",
-      value: sosoLive ? "Live" : offline ? "Reachable" : "Mock / fallback",
+      value: sosoStateLabel,
       ok: sosoLive,
       sub: "8 endpoints in active use",
     },

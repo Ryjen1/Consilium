@@ -11,11 +11,11 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     # SoSoValue
-    soso_api_key: str = Field(default="", description="Leave empty for MOCK mode")
+    soso_api_key: str = Field(default="", description="SoSoValue API key (required for live data)")
     soso_base_url: str = "https://openapi.sosovalue.com/openapi/v1"
     # When true, fall back to deterministic mocks if the live SoSo API hits a
     # 429 monthly-quota error. Keeps demos resilient on the free tier.
-    soso_mock_on_quota_exhausted: bool = True
+    soso_mock_on_quota_exhausted: bool = False
 
     # LLM
     openai_api_key: str = ""

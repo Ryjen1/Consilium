@@ -26,7 +26,7 @@ export function Topbar({
     : health.soso_quota_exhausted
     ? { label: "SOSO QUOTA", cls: "bg-short/20 text-short border border-short/30" }
     : health.mock_mode
-    ? { label: "SOSO MOCK", cls: "bg-panel2 text-muted border border-border" }
+    ? { label: "NO SOSO KEY", cls: "bg-short/20 text-short border border-short/30" }
     : {
         label: "SOSO LIVE",
         cls: "bg-long/15 text-long border border-long/30",

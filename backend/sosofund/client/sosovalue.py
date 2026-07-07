@@ -103,10 +103,6 @@ class SoSoValueClient:
     # ------------------------------------------------------------------ http
     @property
     def mock(self) -> bool:
-        if not self.api_key:
-            return True
-        if self._quota_exhausted and get_settings().soso_mock_on_quota_exhausted:
-            return True
         return False
 
     @property
@@ -139,8 +135,8 @@ class SoSoValueClient:
 
     async def _get(self, path: str, params: dict[str, Any] | None = None) -> Any:
         params = params or {}
-        if self.mock:
-            return _mock_response(path, params)
+        if not self.api_key:
+            raise ValueError("SOSO_API_KEY is not configured. Real SoSoValue API is required.")
 
         key = self._cache_key(path, params)
         hit = _cache.get(key, self._ttl_for(path))
@@ -148,10 +144,6 @@ class SoSoValueClient:
             return hit
 
         client = await self._client()
-        # If we've already hit the wall in this process and fallback is enabled,
-        # skip the retry dance entirely and serve a mock. Makes demos feel snappy.
-        if self._quota_exhausted and get_settings().soso_mock_on_quota_exhausted:
-            return _mock_response(path, params)
         attempts = 5
         backoff_base = 0.8
         last_exc: Exception | None = None
@@ -171,16 +163,15 @@ class SoSoValueClient:
                     except Exception:
                         pass
                     # Monthly quota is unrecoverable for the rest of the window.
-                    # Latch, log once, and let mock fixtures take over.
-                    if "quota" in body_msg and get_settings().soso_mock_on_quota_exhausted:
+                    if "quota" in body_msg:
                         if not self._quota_exhausted:
                             log.warning(
-                                "soso_quota_exhausted_falling_back_to_mock",
+                                "soso_quota_exhausted",
                                 path=path,
                                 message=body_msg,
                             )
                         self._quota_exhausted = True
-                        return _mock_response(path, params)
+                        r.raise_for_status()
                     if retry_after is None:
                         ra_hdr = r.headers.get("retry-after")
                         retry_after = float(ra_hdr) if ra_hdr else None
@@ -217,18 +208,6 @@ class SoSoValueClient:
             except httpx.HTTPError as e:
                 last_exc = e
             await asyncio.sleep(backoff_base * (2 ** i))
-        # Exhausted retries. If the failure is a 429 rate-limit and fallback is
-        # enabled, serve a mock so agents can still produce signals. Latch the
-        # state so subsequent calls skip the retry dance.
-        if (
-            isinstance(last_exc, httpx.HTTPStatusError)
-            and last_exc.response.status_code == 429
-            and get_settings().soso_mock_on_quota_exhausted
-        ):
-            if not self._quota_exhausted:
-                log.warning("soso_fallback_to_mock_after_retries", path=path)
-            self._quota_exhausted = True
-            return _mock_response(path, params)
         if last_exc is None:
             last_exc = RuntimeError(f"exhausted retries for {path}")
         raise last_exc

@@ -1,23 +1,33 @@
 "use client";
 import clsx from "clsx";
+import type { Health } from "@/lib/api";
 
-const ITEMS = [
-  { name: "SoSoValue Terminal", tag: "8 endpoints", status: "live" as const },
-  { name: "SoDEX · perps", tag: "EIP-712 signed", status: "live" as const },
-  { name: "SoDEX · spot", tag: "market data", status: "live" as const },
-  { name: "SSI Protocol", tag: "Post-buildathon", status: "planned" as const },
-  { name: "ValueChain", tag: "Wave 3 audit log", status: "planned" as const },
-  { name: "LangGraph", tag: "agent orchestration", status: "live" as const },
-  { name: "eth-account", tag: "EIP-712", status: "live" as const },
-];
+export function IntegrationsStrip({ health }: { health: Health | null }) {
+  const sosoLive = !!health && !health.mock_mode && !health.soso_quota_exhausted;
+  const sosoTag = !health
+    ? "connecting…"
+    : health.soso_quota_exhausted
+    ? "quota limit reached"
+    : health.mock_mode
+    ? "api key missing"
+    : "8 endpoints";
 
-export function IntegrationsStrip() {
+  const items = [
+    { name: "SoSoValue Terminal", tag: sosoTag, status: sosoLive ? ("live" as const) : ("planned" as const) },
+    { name: "SoDEX · perps", tag: "EIP-712 signed", status: "live" as const },
+    { name: "SoDEX · spot", tag: "market data", status: "live" as const },
+    { name: "SSI Protocol", tag: "Post-buildathon", status: "planned" as const },
+    { name: "ValueChain", tag: "Wave 3 audit log", status: "planned" as const },
+    { name: "LangGraph", tag: "agent orchestration", status: "live" as const },
+    { name: "eth-account", tag: "EIP-712", status: "live" as const },
+  ];
+
   return (
     <div className="card px-5 py-3">
       <div className="flex items-center gap-3 flex-wrap">
         <span className="label shrink-0">Integrated</span>
         <div className="flex items-center gap-1.5 flex-wrap">
-          {ITEMS.map((it) => (
+          {items.map((it) => (
             <div
               key={it.name}
               className={clsx(

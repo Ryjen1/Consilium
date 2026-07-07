@@ -293,7 +293,7 @@ export default function Dashboard() {
           />
         )}
 
-        <IntegrationsStrip />
+        <IntegrationsStrip health={health} />
 
         <footer className="pt-4 pb-6 flex items-center justify-between text-[11px] text-muted border-t border-border/50">
           <div className="flex items-center gap-2">

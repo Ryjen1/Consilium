@@ -40,7 +40,11 @@ export function KpiStrip({
     {
       label: "Agents Active",
       value: `${agents}`,
-      sub: health?.mock_mode || health?.soso_quota_exhausted ? "fallback mode" : `${agents} live feeds`,
+      sub: health?.mock_mode
+        ? "no api key configured"
+        : health?.soso_quota_exhausted
+        ? "quota limit reached"
+        : `${agents} live feeds`,
     },
     {
       label: "Last Run",
