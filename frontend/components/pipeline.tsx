@@ -27,7 +27,7 @@ export function Pipeline({
       id: "agents",
       label: "AGENTS",
       icon: Brain,
-      detail: hasSignals ? `${signals.length} signals` : "4 analysts idle",
+      detail: hasSignals ? `${signals.length} signals` : "6 analysts idle",
       state: (running
         ? "active"
         : hasSignals

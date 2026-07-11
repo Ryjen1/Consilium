@@ -103,7 +103,7 @@ class SoSoValueClient:
     # ------------------------------------------------------------------ http
     @property
     def mock(self) -> bool:
-        return False
+        return not self.api_key
 
     @property
     def quota_exhausted(self) -> bool:
@@ -136,7 +136,7 @@ class SoSoValueClient:
     async def _get(self, path: str, params: dict[str, Any] | None = None) -> Any:
         params = params or {}
         if not self.api_key:
-            raise ValueError("SOSO_API_KEY is not configured. Real SoSoValue API is required.")
+            return _mock_response(path, params)
 
         key = self._cache_key(path, params)
         hit = _cache.get(key, self._ttl_for(path))
@@ -428,16 +428,60 @@ def _mock_response(path: str, params: dict[str, Any]) -> Any:
                     ),
                     "author": rng.choice(["CoinDeskPro", "LaurenPaulsen", "HFAnalyst", "OnchainWhisper"]),
                     "nick_name": "Verified Desk",
-                    "is_blue_verified": rng.choice([1, 1, 1, 0]),
-                    "verified_type": rng.choice(["Business", "Business", "Blue"]),
+                    "is_blue_verified": rng.choice([True, True, True, False]),
+                    "verified_type": rng.choice(["Business", "Business", ""]),
                     "impression_count": rng.randint(1_000, 2_000_000),
                     "like_count": rng.randint(10, 20_000),
-                    "matched_currencies": [{"id": sym.lower(), "name": sym, "full_name": sym}],
+                    "matched_currencies": [{"currency_id": "mock", "symbol": sym, "name": sym}],
                     "category": rng.choice([1, 2, 3, 4]),
                     "tags": [sym, "ETF", "MACRO"],
                 }
             )
         return {"page": 1, "page_size": len(items), "total": len(items), "list": items}
+
+    if path == "/macro/events":
+        now = datetime.now(tz=timezone.utc)
+        return [
+            {
+                "date": (now + timedelta(days=2)).strftime("%Y-%m-%d"),
+                "events": ["CPI (MoM)", "Core CPI (MoM)"],
+            },
+            {
+                "date": (now + timedelta(days=14)).strftime("%Y-%m-%d"),
+                "events": ["Nonfarm Payrolls"],
+            },
+        ]
+
+    if "/macro/events/" in path and "/history" in path:
+        return [
+            {
+                "actual": "0.3%",
+                "forecast": "0.2%",
+                "date": "2026-06-15",
+            },
+            {
+                "actual": "0.2%",
+                "forecast": "0.3%",
+                "date": "2026-05-15",
+            },
+        ]
+
+    if path.startswith("/currencies/") and path.endswith("/pairs"):
+        return [
+            {"symbol": "BTC-USDT", "cost_to_move_up_2pct": 1500000, "cost_to_move_down_2pct": 1200000},
+            {"symbol": "ETH-USDT", "cost_to_move_up_2pct": 800000, "cost_to_move_down_2pct": 600000},
+        ]
+
+    if path == "/currencies/sector-spotlight":
+        return {
+            "sector": [
+                {"name": "DeFi", "change_pct_24h": round(rng.uniform(-5, 8), 2), "marketcap_dom": round(rng.uniform(5, 20), 2)},
+                {"name": "Layer 1", "change_pct_24h": round(rng.uniform(-3, 6), 2), "marketcap_dom": round(rng.uniform(15, 35), 2)},
+                {"name": "Layer 2", "change_pct_24h": round(rng.uniform(-4, 7), 2), "marketcap_dom": round(rng.uniform(3, 12), 2)},
+                {"name": "AI", "change_pct_24h": round(rng.uniform(-6, 10), 2), "marketcap_dom": round(rng.uniform(2, 8), 2)},
+                {"name": "Meme", "change_pct_24h": round(rng.uniform(-10, 15), 2), "marketcap_dom": round(rng.uniform(1, 5), 2)},
+            ]
+        }
 
     raise NotImplementedError(f"Mock fixture not implemented for {path}")
 

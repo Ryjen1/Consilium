@@ -78,7 +78,11 @@ class KOLNarrativeAgent(Agent):
                 continue
             if not it.get("is_blue_verified"):
                 continue
-            if it.get("verified_type") != "Business":
+            # Live SoSoValue API may return verified_type as empty string, None,
+            # or omit it entirely. Accept any non-"Blue" value as Business-tier
+            # (Blue = personal account, Business = institutional/brand account).
+            vtype = str(it.get("verified_type") or "").strip().lower()
+            if vtype == "blue":
                 continue
             try:
                 release_ts = int(it.get("release_time") or 0)
@@ -92,15 +96,23 @@ class KOLNarrativeAgent(Agent):
             for m in it.get("matched_currencies") or []:
                 if not isinstance(m, dict):
                     continue
-                # Try every plausible identifier on the matched-currency object.
-                # SoSoValue's `name` is the project name (e.g. "BITCOIN"), and
-                # `full_name` is the ticker (e.g. "BTC"). We also fall back to
-                # mapping known project names to tickers.
+                # Live SoSoValue API uses: currency_id (numeric), symbol (ticker),
+                # name (project name or JSON). Match on every plausible field.
                 candidates = {
+                    str(m.get("symbol") or "").upper(),
                     str(m.get("name") or "").upper(),
                     str(m.get("full_name") or "").upper(),
-                    str(m.get("symbol") or "").upper(),
                 }
+                # Strip JSON wrappers from name field (e.g. '{"EN": "ROBINHOOD"}')
+                name_raw = str(m.get("name") or "")
+                if name_raw.startswith("{"):
+                    try:
+                        import json as _json
+                        parsed = _json.loads(name_raw)
+                        for v in parsed.values():
+                            candidates.add(str(v).upper())
+                    except Exception:
+                        pass
                 # Resolve project-name -> ticker via the static map.
                 for c in list(candidates):
                     if c in self._NAME_TO_TICKER:

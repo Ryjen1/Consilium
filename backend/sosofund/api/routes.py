@@ -38,12 +38,46 @@ class RunRequest(BaseModel):
     universe: list[str] | None = None
     portfolio_value_usd: float = 100_000.0
     mode: str = "paper"  # "paper" | "sodex_testnet" | "sodex_mainnet"
+    risk_config: dict | None = None  # optional risk overrides
 
 
 class BacktestRequest(BaseModel):
     universe: list[str] | None = None
     days: int = 30
     starting_capital: float = 100_000.0
+
+
+class RiskConfigRequest(BaseModel):
+    max_per_name: float | None = None
+    max_gross: float | None = None
+    solo_weight: float | None = None
+    duo_weight: float | None = None
+    super_majority: float | None = None
+
+
+# In-memory risk config (persists across requests within a process).
+_risk_config: dict = {}
+
+
+@router.get("/config")
+async def get_config() -> dict:
+    return {
+        "risk_config": {
+            "max_per_name": _risk_config.get("max_per_name", 0.05),
+            "max_gross": _risk_config.get("max_gross", 1.00),
+            "solo_weight": _risk_config.get("solo_weight", 0.5),
+            "duo_weight": _risk_config.get("duo_weight", 1.0),
+            "super_majority": _risk_config.get("super_majority", 1.25),
+        }
+    }
+
+
+@router.post("/config")
+async def set_config(req: RiskConfigRequest) -> dict:
+    global _risk_config
+    updates = req.model_dump(exclude_none=True)
+    _risk_config.update(updates)
+    return {"status": "ok", "risk_config": _risk_config}
 
 
 @router.get("/health")
@@ -84,6 +118,7 @@ async def run(req: RunRequest) -> dict[str, Any]:
         universe=req.universe,
         portfolio_value_usd=req.portfolio_value_usd,
         mode=mode,  # type: ignore[arg-type]
+        risk_config=req.risk_config or _risk_config or None,
     )
     resp: dict[str, Any] = {
         "cycle_id": final.get("cycle_id"),

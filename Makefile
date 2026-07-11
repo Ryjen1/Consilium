@@ -1,4 +1,4 @@
-.PHONY: install dev dev-backend dev-frontend smoke clean
+.PHONY: install dev dev-backend dev-frontend smoke test build docker-build clean
 
 install:
 	cd backend && uv venv --python 3.11 && uv pip install -e .
@@ -15,6 +15,15 @@ dev:
 
 smoke:
 	cd backend && .venv/bin/python -m sosofund.smoke
+
+test:
+	cd backend && .venv/bin/python -m pytest tests/ -v
+
+build:
+	cd frontend && pnpm build
+
+docker-build:
+	docker build -t consilium-backend ./backend
 
 clean:
 	rm -f backend/*.db

@@ -47,8 +47,11 @@ fund uses the API *broadly* rather than just one endpoint:
 | Agent | Thesis | SoSoValue endpoint |
 |---|---|---|
 | **ETF Flow** | Institutional demand signal from US spot ETFs (BTC, ETH, SOL, …) | `/etfs/summary-history` |
-| **Unlock Risk** | Shorts tokens with imminent >3% circulating-supply unlocks | `/currencies/{id}/token-economics` |
-| **KOL Narrative** | Longs tokens amplified by blue-verified Business accounts with >500k impressions in 24h | `/news` (with `matched_currencies`) |
+| **Unlock Risk** | Shorts tokens with high supply overhang (locked/circulating > 40%) | `/currencies/{id}/market-snapshot` |
+| **KOL Narrative** | Longs tokens amplified by blue-verified Business accounts | `/news` (with `matched_currencies`) |
+| **Macro** | Positions ahead of CPI/NFP based on actual-vs-forecast residuals | `/macro/events` + `/macro/events/{name}/history` |
+| **Liquidity Depth** | Sizes based on orderbook depth; flags asymmetric depth | `/currencies/{id}/pairs` |
+| **Sector Rotation** | Rotates into the top-performing crypto sector | `/currencies/sector-spotlight` |
 
 A **Risk Manager** aggregates cross-agent signals (opposing directions cancel,
 gross exposure capped), a **Portfolio Manager** sizes trades, and a
@@ -61,6 +64,7 @@ runs through LangGraph.
      ┌─────────────────────────────┐     ┌───────────────────────────────┐
      │     SoSoValue Terminal      │     │           SoDEX               │
      │  ETF flows · unlocks · news │     │  perps klines · tickers       │
+     │  macro · depth · sectors    │     │                               │
      └─────────────────────────────┘     └───────────────────────────────┘
                    │                                   │
           ┌────────┼────────┐                          │
@@ -68,6 +72,11 @@ runs through LangGraph.
     ┌─────────┐ ┌───────┐ ┌─────────────┐              │
     │ETF Flow │ │Unlock │ │   KOL       │              │
     │  Agent  │ │ Risk  │ │ Narrative   │              │
+    └─────────┘ └───────┘ └─────────────┘              │
+          │        │        │                          │
+    ┌─────────┐ ┌───────┐ ┌─────────────┐              │
+    │  Macro  │ │Liqud. │ │  Sector     │              │
+    │  Agent  │ │Depth  │ │  Rotation   │              │
     └─────────┘ └───────┘ └─────────────┘              │
           │        │        │                          │
           └────────┼────────┘                          │
@@ -166,29 +175,34 @@ The AKINDO Buildathon rewards continuous progress across waves. Our plan:
 
 - **Backend:** Python 3.11 · FastAPI · LangGraph · httpx · SQLAlchemy · SQLite · Pydantic v2
 - **Frontend:** Next.js 14 · Tailwind · Recharts · TypeScript
-- **Data:** SoSoValue Terminal API (32 endpoints catalogued, 9 integrated) + SoDEX market data
-- **Execution:** Paper ledger + **SoDEX testnet perps (EIP-712 signed)** · ValueChain audit (Wave 3)
+- **Data:** SoSoValue Terminal API (10+ endpoints integrated) + SoDEX market data
+- **Execution:** Paper ledger + **SoDEX testnet perps (EIP-712 signed)** · Configurable risk limits
 - **Signing:** `eth-account` (EIP-712 typed data, 0x01-prefixed typed signatures)
+- **Tests:** pytest · pytest-asyncio (16 unit tests)
+- **Deploy:** Docker · Vercel · Render
 
 ## Project layout
 
 ```
 sosofund/
 ├── backend/
+│   ├── Dockerfile               Production container
+│   ├── tests/                   Unit tests (signer, risk, portfolio)
 │   └── sosofund/
-│       ├── client/sosovalue.py      SoSoValue async client (mock + quota-aware fallback)
+│       ├── client/sosovalue.py      SoSoValue async client (live + mock fallback)
 │       ├── client/resolver.py       Symbol → currency_id cache
-│       ├── sodex/client.py          SoDEX REST client (spot + perps, testnet + mainnet)
+│       ├── sodex/client.py          SoDEX REST client (spot + perps)
 │       ├── sodex/signer.py          EIP-712 typed-data signer
-│       ├── sodex/executor.py        Perps testnet executor (market orders, safety caps)
-│       ├── agents/                  ETF Flow · Unlock Risk · KOL Narrative
-│       ├── graph/                   LangGraph pipeline · RiskMgr · PortfolioMgr · mode switch
+│       ├── sodex/executor.py        Perps testnet executor (market orders)
+│       ├── agents/                  6 agents: ETF Flow · Unlock Risk · KOL Narrative · Macro · Liquidity Depth · Sector Rotation
+│       ├── graph/                   LangGraph pipeline · RiskMgr (configurable) · PortfolioMgr
 │       ├── execution/               Paper executor · SQLite ledger
-│       ├── backtest/                30-day replay on SoDEX perps klines
-│       └── api/                     FastAPI routes with mode-aware /run
+│       ├── backtest/                30-day replay on SoDEX klines + outcome tracker
+│       └── api/                     FastAPI routes with /config, /run, /backtest, /markets
 └── frontend/
-    ├── app/page.tsx                 Dashboard with Paper / SoDEX toggle
-    └── components/                  AgentPanel · DecisionLog · PortfolioCard · PnLChart · ModeToggle
+    ├── app/page.tsx                 Landing page with live market ticker
+    ├── app/dapp/page.tsx            Dashboard with Paper / SoDEX toggle
+    └── components/                  AgentPanel · DecisionPanel · Pipeline · PnLChart · RiskControls · SodexBalanceCard · OutcomeTracker
 ```
 
 ## License

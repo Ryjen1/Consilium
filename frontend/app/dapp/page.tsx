@@ -26,6 +26,7 @@ import { DecisionPanel } from "@/components/decision-panel";
 import { SectorIntel } from "@/components/sector-intel";
 import { OutcomeTracker } from "@/components/outcome-tracker";
 import { SodexBalanceCard } from "@/components/sodex-balance-card";
+import { RiskControls } from "@/components/risk-controls";
 
 export default function Dashboard() {
   const [health, setHealth] = useState<Health | null>(null);
@@ -43,6 +44,9 @@ export default function Dashboard() {
   const [mode, setMode] = useState<ExecutionMode>("paper");
   const [runErrors, setRunErrors] = useState<string[]>([]);
   const [portfolioUsd, setPortfolioUsd] = useState<number>(100_000);
+  const [riskConfig, setRiskConfig] = useState<Record<string, number> | null>(null);
+  // Quota/expiry banner from health check
+  const [quotaBanner, setQuotaBanner] = useState<string | null>(null);
   // First-run gate: empty state IS the tutorial. Persisted in localStorage
   // so we only show the teaching panel on a fresh browser.
   const [hasRunBefore, setHasRunBefore] = useState<boolean>(true);
@@ -85,6 +89,13 @@ export default function Dashboard() {
     try {
       const h = await api<Health>("/api/health");
       setHealth(h);
+      if (h.mock_mode) {
+        setQuotaBanner("Running in mock mode — no SoSoValue API key configured. Signals are deterministic fixtures.");
+      } else if (h.soso_quota_exhausted) {
+        setQuotaBanner("SoSoValue API quota exhausted. Signals are using cached/fallback data.");
+      } else {
+        setQuotaBanner(null);
+      }
     } catch (e: any) {
       setErr(e.message);
     }
@@ -116,6 +127,7 @@ export default function Dashboard() {
           universe: ["BTC", "ETH", "SOL", "ARB", "OP"],
           portfolio_value_usd: portfolioUsd,
           mode,
+          ...(riskConfig ? { risk_config: riskConfig } : {}),
         }),
       });
       setSignals(r.signals);
@@ -200,10 +212,23 @@ export default function Dashboard() {
           </div>
         )}
 
+        {quotaBanner && (
+          <div className="card border-warn/40 bg-warn/5 text-warn text-xs px-4 py-2.5 flex items-start gap-2">
+            <span className="mono uppercase tracking-wider opacity-70">info</span>
+            <span className="flex-1">{quotaBanner}</span>
+            <button
+              onClick={() => setQuotaBanner(null)}
+              className="opacity-50 hover:opacity-100"
+            >
+              ×
+            </button>
+          </div>
+        )}
+
         <section className="flex flex-col gap-3">
           <div className="flex items-baseline justify-between px-1">
             <h1 className="text-xl font-semibold tracking-tight">
-              A council of 4 analysts trading{" "}
+              A council of 6 analysts trading{" "}
               <span className="text-brand">SoSoValue</span> signals onto{" "}
               <span className="text-brand">SoDEX</span>
             </h1>
@@ -228,6 +253,8 @@ export default function Dashboard() {
 
         {hasRunBefore ? (
           <>
+            <RiskControls />
+
             <KpiStrip
               portfolio={portfolio}
               health={health}
@@ -269,7 +296,7 @@ export default function Dashboard() {
                   {signals.length} signals · last cycle
                 </span>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {(health?.agents ?? []).map((a) => (
                   <AgentPanel
                     key={a.name}

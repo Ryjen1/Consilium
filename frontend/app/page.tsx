@@ -9,13 +9,13 @@ import { Logo } from "@/components/logo";
 const STEPS = [
   {
     icon: Brain,
-    title: "Agents read the market",
-    body: "Four specialized analysts read SoSoValue Terminal: ETF flows, token-unlock risk, KOL narrative momentum, and macro event positioning.",
+    title: "6 agents read the market",
+    body: "Six specialized analysts read SoSoValue Terminal: ETF flows, token-unlock risk, KOL narrative momentum, macro event positioning, liquidity depth, and sector rotation.",
   },
   {
     icon: Shield,
     title: "Risk manager sizes positions",
-    body: "Multi-agent signals are aggregated via confidence-weighted voting, opposing directions cancel, and every position is capped at 5% of book.",
+    body: "Multi-agent signals are aggregated via confidence-weighted voting, opposing directions cancel, and every position is capped at 5% of book. Configurable from the UI.",
   },
   {
     icon: Network,
@@ -32,15 +32,15 @@ const STEPS = [
 const FEATURES = [
   {
     title: "SoSoValue-native",
-    body: "8 Terminal endpoints in active use — ETF flows, token economics, macro events, news feed, market snapshots, and sector intel.",
+    body: "10+ Terminal endpoints in active use — ETF flows, token economics, macro events, news feed, market snapshots, sector intel, and liquidity depth.",
   },
   {
     title: "On-chain execution",
     body: "EIP-712 signer and SoDEX perps executor wired end-to-end. Testnet fills with live balance tracking and position management.",
   },
   {
-    title: "Multi-agent consensus",
-    body: "Confidence-weighted voting across 4 specialists. Solo, duo, and super-majority sizing with gross-exposure caps.",
+    title: "6-agent consensus",
+    body: "Confidence-weighted voting across 6 specialists. Solo, duo, and super-majority sizing with configurable risk limits.",
   },
   {
     title: "Backtesting on real prices",
@@ -66,8 +66,8 @@ const WAVES = [
   {
     q: "Wave 3",
     tag: "Shipped",
-    title: "Polish + UX pass",
-    body: "Full dashboard refinement: pipeline visualization, decision panel, PnL charts, book-size input, first-run onboarding.",
+    title: "6 agents + risk controls + production polish",
+    body: "Liquidity Depth and Sector Rotation agents. Configurable risk limits from UI. Live SoSoValue + SoDEX testnet execution. Production deployment.",
     shipped: true,
   },
   {

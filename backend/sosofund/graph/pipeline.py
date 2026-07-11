@@ -71,6 +71,7 @@ async def run_cycle(
     universe: list[str] | None = None,
     portfolio_value_usd: float = 100_000,
     mode: ExecutionMode = "paper",
+    risk_config: dict | None = None,
 ) -> FundState:
     app = build_graph(mode=mode)
     initial: FundState = {
@@ -80,6 +81,7 @@ async def run_cycle(
         "sized_positions": {},
         "trades": [],
         "errors": [],
+        "risk_config": risk_config or {},
     }
     final = await app.ainvoke(initial)
     return final

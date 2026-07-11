@@ -35,6 +35,14 @@ NOISE_THRESHOLD = 0.003   # <0.3% target weight is noise, skip
 
 
 async def risk_manager(state: FundState) -> FundState:
+    # Allow runtime overrides from FundState, fall back to module defaults.
+    cfg = state.get("risk_config") or {}
+    MAX_PER_NAME = float(cfg.get("max_per_name", 0.05))
+    MAX_GROSS = float(cfg.get("max_gross", 1.00))
+    SOLO_WEIGHT = float(cfg.get("solo_weight", 0.5))
+    DUO_WEIGHT = float(cfg.get("duo_weight", 1.0))
+    SUPER_MAJORITY = float(cfg.get("super_majority", 1.25))
+
     signals = state.get("signals", [])
     by_symbol: dict[str, list] = defaultdict(list)
     for s in signals:
